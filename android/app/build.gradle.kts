@@ -1,0 +1,107 @@
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.google.services)
+    alias(libs.plugins.ktlint)
+    alias(libs.plugins.detekt)
+}
+
+// Konfigurasi Supabase dibaca dari .env di root repo (satu sumber untuk CLI dan app).
+val repoEnv: Map<String, String> =
+    rootProject.file("../.env")
+        .takeIf { it.exists() }
+        ?.readLines()
+        .orEmpty()
+        .map { it.trim() }
+        .filter { it.isNotEmpty() && !it.startsWith("#") && "=" in it }
+        .associate { line -> line.substringBefore("=").trim() to line.substringAfter("=").trim() }
+
+fun requireEnv(key: String): String = repoEnv[key]?.takeIf { it.isNotEmpty() }
+    ?: System.getenv(key)
+    ?: error("$key belum diisi. Isi di .env (lihat .env.example).")
+
+android {
+    namespace = "com.iqbal.journal"
+    compileSdk = 37
+
+    defaultConfig {
+        applicationId = "com.iqbal.journal"
+        minSdk = 26
+        targetSdk = 37
+        versionCode = 1
+        versionName = "0.1.0"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "SUPABASE_URL", "\"${requireEnv("SUPABASE_URL")}\"")
+        buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\"${requireEnv("SUPABASE_PUBLISHABLE_KEY")}\"")
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
+}
+
+ktlint {
+    version.set(libs.versions.ktlint)
+    android.set(true)
+}
+
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom(rootProject.file("config/detekt/detekt.yml"))
+}
+
+// detekt 1.23 dikompilasi dengan Kotlin 2.0.21; paksa versi itu hanya untuk classpath detekt.
+configurations.matching { it.name == "detekt" }.configureEach {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.jetbrains.kotlin") useVersion("2.0.21")
+    }
+}
+
+dependencies {
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.compose.material3)
+    debugImplementation(libs.androidx.compose.ui.tooling)
+
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+
+    implementation(platform(libs.supabase.bom))
+    implementation(libs.supabase.auth)
+    implementation(libs.supabase.postgrest)
+    implementation(libs.supabase.realtime)
+    implementation(libs.supabase.functions)
+    implementation(libs.ktor.client.okhttp)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.coroutines.android)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
+    testImplementation(libs.mockk)
+}

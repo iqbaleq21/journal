@@ -1,0 +1,24 @@
+# Secret
+.env
+local.properties
+google-services.json
+*.jks
+*.keystore
+*service-account*.json
+
+# Android / Gradle
+.gradle/
+build/
+.idea/
+.kotlin/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Supabase
+supabase/.branches/
+supabase/.temp/
+
+# OS
+.DS_Store

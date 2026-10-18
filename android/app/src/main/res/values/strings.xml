@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">jOURnal</string>
+    <string name="setup_headline">Catatan bersama, selalu ada di layar utama.</string>
+    <string name="setup_placeholder">Fondasi aplikasi siap. Layar Kenalan menyusul.</string>
+</resources>

@@ -1,0 +1,19 @@
+# Hanya penyesuaian dari config bawaan detekt (buildUponDefaultConfig = true).
+naming:
+  FunctionNaming:
+    ignoreAnnotated: ['Composable']
+  TopLevelPropertyNaming:
+    constantPattern: '[A-Z][A-Za-z0-9]*'
+
+complexity:
+  LongParameterList:
+    ignoreAnnotated: ['Composable']
+  LongMethod:
+    ignoreAnnotated: ['Composable']
+
+style:
+  MagicNumber:
+    # Token desain (warna, ukuran huruf, radius) memang berupa angka literal.
+    excludes: ['**/ui/theme/**']
+  UnusedPrivateMember:
+    ignoreAnnotated: ['Preview']
