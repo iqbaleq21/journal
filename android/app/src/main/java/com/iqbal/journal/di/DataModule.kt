@@ -6,12 +6,16 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room.Room
+import com.iqbal.journal.data.local.AuthorDao
 import com.iqbal.journal.data.local.GroupDao
 import com.iqbal.journal.data.local.JournalDatabase
 import com.iqbal.journal.data.local.MyProfileDao
+import com.iqbal.journal.data.local.NoteDao
 import com.iqbal.journal.data.repository.GroupRepositoryImpl
+import com.iqbal.journal.data.repository.NoteRepositoryImpl
 import com.iqbal.journal.data.repository.ProfileRepositoryImpl
 import com.iqbal.journal.domain.repository.GroupRepository
+import com.iqbal.journal.domain.repository.NoteRepository
 import com.iqbal.journal.domain.repository.ProfileRepository
 import dagger.Binds
 import dagger.Module
@@ -19,6 +23,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import java.time.Clock
 import javax.inject.Singleton
 
 @Module
@@ -38,6 +43,15 @@ object LocalDataModule {
     fun provideGroupDao(database: JournalDatabase): GroupDao = database.groupDao()
 
     @Provides
+    fun provideNoteDao(database: JournalDatabase): NoteDao = database.noteDao()
+
+    @Provides
+    fun provideAuthorDao(database: JournalDatabase): AuthorDao = database.authorDao()
+
+    @Provides
+    fun provideClock(): Clock = Clock.systemDefaultZone()
+
+    @Provides
     @Singleton
     fun providePreferencesDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
         PreferenceDataStoreFactory.create { context.preferencesDataStoreFile(PREFERENCES_FILE) }
@@ -53,4 +67,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindGroupRepository(impl: GroupRepositoryImpl): GroupRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindNoteRepository(impl: NoteRepositoryImpl): NoteRepository
 }

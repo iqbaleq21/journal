@@ -23,16 +23,71 @@ interface GroupDao {
     @Query("SELECT * FROM groups WHERE id = :id")
     suspend fun getById(id: String): GroupEntity?
 
-    /** Samakan cache dengan server: grup yang tidak lagi diikuti ikut terhapus. */
+    /** Samakan cache dengan server: grup yang tidak lagi diikuti, beserta catatannya, ikut terhapus. */
     @Transaction
     suspend fun replaceAll(groups: List<GroupEntity>) {
-        deleteAll()
+        deleteAllExcept(groups.map { it.id })
         upsertAll(groups)
+        deleteNotesOfLeftGroups()
     }
 
     @Upsert
     suspend fun upsertAll(groups: List<GroupEntity>)
 
-    @Query("DELETE FROM groups")
-    suspend fun deleteAll()
+    @Query("DELETE FROM groups WHERE id NOT IN (:ids)")
+    suspend fun deleteAllExcept(ids: List<String>)
+
+    // Tanpa foreign key: catatan dari Realtime bisa tiba sebelum grupnya tersinkron.
+    @Query("DELETE FROM notes WHERE group_id NOT IN (SELECT id FROM groups)")
+    suspend fun deleteNotesOfLeftGroups()
+}
+
+@Dao
+interface NoteDao {
+    @Query(
+        """
+        SELECT notes.*, authors.display_name AS author_name FROM notes
+        LEFT JOIN authors ON authors.id = notes.author_id
+        WHERE notes.group_id = :groupId
+        ORDER BY notes.updated_at DESC
+        """
+    )
+    fun observeByGroup(groupId: String): Flow<List<NoteWithAuthor>>
+
+    @Query(
+        """
+        SELECT notes.*, authors.display_name AS author_name FROM notes
+        LEFT JOIN authors ON authors.id = notes.author_id
+        WHERE notes.id = :id
+        """
+    )
+    fun observeById(id: String): Flow<NoteWithAuthor?>
+
+    /** Samakan catatan sebuah grup dengan hasil terbaru dari server. */
+    @Transaction
+    suspend fun replaceForGroup(groupId: String, notes: List<NoteEntity>) {
+        deleteFromGroupExcept(groupId, notes.map { it.id })
+        upsertAll(notes)
+    }
+
+    @Upsert
+    suspend fun upsert(note: NoteEntity)
+
+    @Upsert
+    suspend fun upsertAll(notes: List<NoteEntity>)
+
+    @Query("DELETE FROM notes WHERE id = :id")
+    suspend fun deleteById(id: String)
+
+    @Query("DELETE FROM notes WHERE group_id = :groupId AND id NOT IN (:keepIds)")
+    suspend fun deleteFromGroupExcept(groupId: String, keepIds: List<String>)
+}
+
+@Dao
+interface AuthorDao {
+    @Upsert
+    suspend fun upsertAll(authors: List<AuthorEntity>)
+
+    @Query("SELECT EXISTS(SELECT 1 FROM authors WHERE id = :id)")
+    suspend fun exists(id: String): Boolean
 }

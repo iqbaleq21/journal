@@ -1,9 +1,12 @@
 package com.iqbal.journal.data
 
+import com.iqbal.journal.data.local.NoteWithAuthor
 import com.iqbal.journal.data.remote.CountDto
 import com.iqbal.journal.data.remote.GroupDto
+import com.iqbal.journal.data.remote.NoteDto
 import com.iqbal.journal.data.remote.mapServerMessage
 import com.iqbal.journal.domain.model.JournalError
+import com.iqbal.journal.domain.model.NoteColor
 import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -49,5 +52,32 @@ class GroupMappingTest {
         assertEquals(0, group.memberCount)
         assertNull(group.inviteCode)
         assertNull(group.inviteExpiresAt)
+    }
+}
+
+class NoteMappingTest {
+    private fun dto(color: String?) = NoteDto(
+        id = "n1",
+        groupId = "g1",
+        authorId = "a1",
+        content = "Galon habis",
+        color = color,
+        createdAt = "2026-10-18T01:00:00+00:00",
+        updatedAt = "2026-10-18T02:30:00.5+00:00"
+    )
+
+    @Test
+    fun `dto catatan dipetakan ke domain beserta nama penulis`() {
+        val note = NoteWithAuthor(dto("mint").toEntity(), authorName = "Ibu").toDomain()
+
+        assertEquals(NoteColor.Mint, note.color)
+        assertEquals("Ibu", note.authorName)
+        assertEquals(Instant.parse("2026-10-18T02:30:00.500Z"), note.updatedAt)
+    }
+
+    @Test
+    fun `warna kosong atau tidak dikenal menjadi warna bawaan`() {
+        assertEquals(NoteColor.Plain, NoteWithAuthor(dto(null).toEntity(), null).toDomain().color)
+        assertEquals(NoteColor.Plain, NoteWithAuthor(dto("neon").toEntity(), null).toDomain().color)
     }
 }

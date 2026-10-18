@@ -45,3 +45,13 @@ class GroupRulesTest {
         assertFalse(GroupRules.isValidName("a".repeat(GroupRules.MAX_NAME_LENGTH + 1)))
     }
 }
+
+class NoteRulesTest {
+    @Test
+    fun `isi catatan dipangkas lalu dicek panjangnya`() {
+        assertEquals("Galon habis", NoteRules.normalizeContent("  Galon habis \n"))
+        assertTrue(NoteRules.isValidContent("a".repeat(NoteRules.MAX_NOTE_LENGTH)))
+        assertFalse(NoteRules.isValidContent("a".repeat(NoteRules.MAX_NOTE_LENGTH + 1)))
+        assertFalse(NoteRules.isValidContent(" \n "))
+    }
+}

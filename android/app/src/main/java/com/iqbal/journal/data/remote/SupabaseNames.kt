@@ -4,6 +4,7 @@ package com.iqbal.journal.data.remote
 internal object Tables {
     const val PROFILES = "profiles"
     const val GROUPS = "groups"
+    const val NOTES = "notes"
 }
 
 internal object Rpc {

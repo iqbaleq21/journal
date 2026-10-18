@@ -1,0 +1,123 @@
+package com.iqbal.journal.data.repository
+
+import com.iqbal.journal.data.local.AuthorDao
+import com.iqbal.journal.data.local.NoteDao
+import com.iqbal.journal.data.local.NoteWithAuthor
+import com.iqbal.journal.data.remote.AuthorDto
+import com.iqbal.journal.data.remote.NoteChange
+import com.iqbal.journal.data.remote.NoteDto
+import com.iqbal.journal.data.remote.NoteRemoteDataSource
+import com.iqbal.journal.data.remote.ProfileRemoteDataSource
+import com.iqbal.journal.data.toEntity
+import com.iqbal.journal.domain.model.JournalError
+import com.iqbal.journal.domain.model.Outcome
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.mockk
+import java.io.IOException
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneOffset
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Test
+
+class NoteRepositoryImplTest {
+    private val remote = mockk<NoteRemoteDataSource>()
+    private val profileRemote = mockk<ProfileRemoteDataSource>()
+    private val noteDao = mockk<NoteDao>(relaxUnitFun = true)
+    private val authorDao = mockk<AuthorDao>(relaxUnitFun = true)
+    private val now = Instant.parse("2026-10-18T05:00:00Z")
+    private val repository =
+        NoteRepositoryImpl(remote, profileRemote, noteDao, authorDao, Clock.fixed(now, ZoneOffset.UTC))
+
+    private fun dto(id: String = "n1", authorId: String = "a1", deletedAt: String? = null) = NoteDto(
+        id = id,
+        groupId = "g1",
+        authorId = authorId,
+        content = "Galon habis",
+        createdAt = "2026-10-18T01:00:00+00:00",
+        updatedAt = "2026-10-18T01:00:00+00:00",
+        deletedAt = deletedAt
+    )
+
+    @Test
+    fun `refresh mengganti catatan grup dan mengambil nama semua penulis`() = runTest {
+        val notes = listOf(dto("n1", "a1"), dto("n2", "a2"), dto("n3", "a1"))
+        coEvery { remote.fetchLatest("g1", NoteRepositoryImpl.LOCAL_NOTES_PER_GROUP) } returns notes
+        coEvery { profileRemote.fetchAuthors(setOf("a1", "a2")) } returns listOf(AuthorDto("a1", "Ibu"))
+
+        assertEquals(Outcome.Success(Unit), repository.refresh("g1"))
+
+        coVerify { noteDao.replaceForGroup("g1", notes.map { it.toEntity() }) }
+        coVerify { authorDao.upsertAll(listOf(AuthorDto("a1", "Ibu").toEntity())) }
+    }
+
+    @Test
+    fun `refresh tanpa koneksi menjadi error jaringan`() = runTest {
+        coEvery { remote.fetchLatest(any(), any()) } throws IOException("offline")
+
+        assertEquals(Outcome.Failure(JournalError.Network), repository.refresh("g1"))
+    }
+
+    @Test
+    fun `hapus mengirim soft delete dengan waktu sekarang lalu membuang dari cache`() = runTest {
+        coEvery { remote.softDelete("n1", now) } returns Unit
+
+        assertEquals(Outcome.Success(Unit), repository.delete("n1"))
+        coVerify { noteDao.deleteById("n1") }
+    }
+
+    @Test
+    fun `perubahan realtime diterapkan ke cache lokal`() = runTest {
+        every { remote.changes() } returns flowOf(
+            NoteChange.Saved(dto("n1", "a1")),
+            NoteChange.Saved(dto("n2", deletedAt = "2026-10-18T04:00:00+00:00")),
+            NoteChange.Purged("n3")
+        )
+        coEvery { authorDao.exists("a1") } returns true
+
+        repository.listenForChanges()
+
+        coVerify { noteDao.upsert(dto("n1", "a1").toEntity()) }
+        coVerify { noteDao.deleteById("n2") }
+        coVerify { noteDao.deleteById("n3") }
+        coVerify(exactly = 0) { profileRemote.fetchAuthors(any()) }
+    }
+
+    @Test
+    fun `penulis baru diambil namanya, dan kegagalannya tidak memutus realtime`() = runTest {
+        every { remote.changes() } returns
+            flowOf(NoteChange.Saved(dto("n1", "baru")), NoteChange.Saved(dto("n2", "a1")))
+        coEvery { authorDao.exists("baru") } returns false
+        coEvery { authorDao.exists("a1") } returns true
+        coEvery { profileRemote.fetchAuthors(setOf("baru")) } throws IOException("offline")
+
+        repository.listenForChanges()
+
+        coVerify { noteDao.upsert(dto("n2", "a1").toEntity()) }
+    }
+
+    @Test
+    fun `realtime yang terputus dilaporkan sebagai kegagalan`() = runTest {
+        every { remote.changes() } returns flow { throw IOException("socket") }
+
+        assertEquals(Outcome.Failure(JournalError.Network), repository.listenForChanges())
+    }
+
+    @Test
+    fun `catatan baru disimpan ke cache dan dikembalikan`() = runTest {
+        val saved = dto("n1", "me")
+        coEvery { remote.insert("g1", "Galon habis") } returns saved
+        coEvery { authorDao.exists("me") } returns true
+        every { noteDao.observeById("n1") } returns flowOf(NoteWithAuthor(saved.toEntity(), "Ayah"))
+
+        val result = repository.create("g1", "  Galon habis ")
+
+        assertEquals("n1", (result as Outcome.Success).value.id)
+        coVerify { noteDao.upsert(saved.toEntity()) }
+    }
+}
