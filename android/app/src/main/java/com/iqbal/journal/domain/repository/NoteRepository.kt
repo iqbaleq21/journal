@@ -23,7 +23,9 @@ interface NoteRepository {
 
     /**
      * Terapkan perubahan catatan dari server secara langsung ke cache lokal.
+     * [onSubscribed] dipanggil begitu langganan aktif: refresh di sana tidak meninggalkan celah perubahan
+     * yang terlewat, karena perubahan selama refresh diantrekan lalu diterapkan sesudahnya.
      * Berjalan sampai coroutine pemanggil dibatalkan; kembali dengan [Outcome.Failure] jika koneksi gagal.
      */
-    suspend fun listenForChanges(): Outcome<Unit>
+    suspend fun listenForChanges(onSubscribed: suspend () -> Unit): Outcome<Unit>
 }

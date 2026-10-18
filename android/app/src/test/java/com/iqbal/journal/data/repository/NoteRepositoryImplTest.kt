@@ -80,7 +80,7 @@ class NoteRepositoryImplTest {
         )
         coEvery { authorDao.exists("a1") } returns true
 
-        repository.listenForChanges()
+        repository.listenForChanges(onSubscribed = {})
 
         coVerify { noteDao.upsert(dto("n1", "a1").toEntity()) }
         coVerify { noteDao.deleteById("n2") }
@@ -96,16 +96,27 @@ class NoteRepositoryImplTest {
         coEvery { authorDao.exists("a1") } returns true
         coEvery { profileRemote.fetchAuthors(setOf("baru")) } throws IOException("offline")
 
-        repository.listenForChanges()
+        repository.listenForChanges(onSubscribed = {})
 
         coVerify { noteDao.upsert(dto("n2", "a1").toEntity()) }
+    }
+
+    @Test
+    fun `refresh dijalankan setelah langganan aktif dan sebelum perubahan berikutnya diterapkan`() = runTest {
+        val order = mutableListOf<String>()
+        every { remote.changes() } returns flowOf(NoteChange.Subscribed, NoteChange.Purged("n1"))
+        coEvery { noteDao.deleteById("n1") } answers { order += "purge" }
+
+        repository.listenForChanges(onSubscribed = { order += "refresh" })
+
+        assertEquals(listOf("refresh", "purge"), order)
     }
 
     @Test
     fun `realtime yang terputus dilaporkan sebagai kegagalan`() = runTest {
         every { remote.changes() } returns flow { throw IOException("socket") }
 
-        assertEquals(Outcome.Failure(JournalError.Network), repository.listenForChanges())
+        assertEquals(Outcome.Failure(JournalError.Network), repository.listenForChanges(onSubscribed = {}))
     }
 
     @Test

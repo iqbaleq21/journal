@@ -52,9 +52,10 @@ class NoteRepositoryImpl @Inject constructor(
         noteDao.deleteById(noteId)
     }
 
-    override suspend fun listenForChanges(): Outcome<Unit> = outcomeOf {
+    override suspend fun listenForChanges(onSubscribed: suspend () -> Unit): Outcome<Unit> = outcomeOf {
         remote.changes().collect { change ->
             when (change) {
+                NoteChange.Subscribed -> onSubscribed()
                 is NoteChange.Saved -> apply(change.note)
                 is NoteChange.Purged -> noteDao.deleteById(change.noteId)
             }

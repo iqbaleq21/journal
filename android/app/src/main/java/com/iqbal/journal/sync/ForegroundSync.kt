@@ -40,9 +40,9 @@ class ForegroundSync @Inject constructor(
 
     private suspend fun syncWhileVisible() {
         while (true) {
-            refreshAll()
-            // Normalnya tidak pernah selesai; jika koneksi putus, catatan yang terlewat diambil di putaran berikut.
-            val result = noteRepository.listenForChanges()
+            // Refresh setelah langganan aktif, bukan sebelumnya, agar perubahan di antaranya tidak terlewat.
+            // Normalnya tidak pernah selesai; jika koneksi putus, putaran berikut berlangganan dan refresh lagi.
+            val result = noteRepository.listenForChanges(onSubscribed = ::refreshAll)
             if (result is Outcome.Failure) Log.w(TAG, "Realtime terputus: ${result.error}")
             delay(RECONNECT_DELAY_MILLIS)
         }

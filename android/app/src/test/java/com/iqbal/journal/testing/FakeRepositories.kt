@@ -100,7 +100,10 @@ class FakeNoteRepository : NoteRepository {
         return Outcome.Success(Unit)
     }
 
-    override suspend fun listenForChanges(): Outcome<Unit> = Outcome.Success(Unit)
+    override suspend fun listenForChanges(onSubscribed: suspend () -> Unit): Outcome<Unit> {
+        onSubscribed()
+        return Outcome.Success(Unit)
+    }
 
     companion object {
         fun note(id: String = "n1", groupId: String = "g1", authorId: String = "me", content: String = "Galon habis") =
