@@ -11,12 +11,15 @@ import com.iqbal.journal.data.local.GroupDao
 import com.iqbal.journal.data.local.JournalDatabase
 import com.iqbal.journal.data.local.MyProfileDao
 import com.iqbal.journal.data.local.NoteDao
+import com.iqbal.journal.data.local.WidgetSelectionDao
 import com.iqbal.journal.data.repository.GroupRepositoryImpl
 import com.iqbal.journal.data.repository.NoteRepositoryImpl
 import com.iqbal.journal.data.repository.ProfileRepositoryImpl
+import com.iqbal.journal.data.repository.WidgetRepositoryImpl
 import com.iqbal.journal.domain.repository.GroupRepository
 import com.iqbal.journal.domain.repository.NoteRepository
 import com.iqbal.journal.domain.repository.ProfileRepository
+import com.iqbal.journal.domain.repository.WidgetRepository
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -49,6 +52,9 @@ object LocalDataModule {
     fun provideAuthorDao(database: JournalDatabase): AuthorDao = database.authorDao()
 
     @Provides
+    fun provideWidgetSelectionDao(database: JournalDatabase): WidgetSelectionDao = database.widgetSelectionDao()
+
+    @Provides
     fun provideClock(): Clock = Clock.systemDefaultZone()
 
     @Provides
@@ -71,4 +77,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindNoteRepository(impl: NoteRepositoryImpl): NoteRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindWidgetRepository(impl: WidgetRepositoryImpl): WidgetRepository
 }

@@ -11,6 +11,9 @@ interface NoteRepository {
     /** Satu catatan dari cache lokal; null jika tidak ada atau sudah dihapus. */
     fun note(noteId: String): Flow<Note?>
 
+    /** Berbunyi setiap kali isi cache catatan berubah (untuk memperbarui widget). */
+    val changes: Flow<Unit>
+
     /** Ambil ulang catatan terbaru sebuah grup dari server ke cache lokal. */
     suspend fun refresh(groupId: String): Outcome<Unit>
 

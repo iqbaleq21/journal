@@ -49,6 +49,11 @@ class NoteRemoteDataSource @Inject constructor(private val client: SupabaseClien
         }
         .decodeList()
 
+    /** Catatan tertentu, termasuk yang sudah di-soft-delete, agar penghapusannya bisa diterapkan. */
+    suspend fun fetchByIds(noteIds: Collection<String>): List<NoteDto> = client.from(Tables.NOTES)
+        .select { filter { isIn("id", noteIds.toList()) } }
+        .decodeList()
+
     suspend fun insert(groupId: String, content: String): NoteDto = client.from(Tables.NOTES)
         .insert(NewNoteDto(groupId = groupId, authorId = currentUserId(), content = content)) { select() }
         .decodeSingle()

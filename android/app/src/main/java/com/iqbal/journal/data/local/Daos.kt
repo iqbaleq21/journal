@@ -63,7 +63,17 @@ interface NoteDao {
     )
     fun observeById(id: String): Flow<NoteWithAuthor?>
 
-    /** Samakan catatan sebuah grup dengan hasil terbaru dari server. */
+    /** Ringkasan isi tabel yang berubah setiap ada tambah, ubah, atau hapus. */
+    // Jumlah penulis ikut dihitung agar nama yang baru terambil juga memicu pembaruan.
+    @Query(
+        """
+        SELECT COUNT(*) || ':' || IFNULL(MAX(updated_at), 0) || ':' || IFNULL(SUM(updated_at), 0)
+        || ':' || (SELECT COUNT(*) FROM authors) FROM notes
+        """
+    )
+    fun observeVersion(): Flow<String>
+
+    /** Samakan catatan sebuah grup dengan hasil terbaru dari server; catatan yang dipakai widget dipertahankan. */
     @Transaction
     suspend fun replaceForGroup(groupId: String, notes: List<NoteEntity>) {
         deleteFromGroupExcept(groupId, notes.map { it.id })
@@ -79,8 +89,34 @@ interface NoteDao {
     @Query("DELETE FROM notes WHERE id = :id")
     suspend fun deleteById(id: String)
 
-    @Query("DELETE FROM notes WHERE group_id = :groupId AND id NOT IN (:keepIds)")
+    @Query(
+        """
+        DELETE FROM notes WHERE group_id = :groupId AND id NOT IN (:keepIds)
+        AND id NOT IN (SELECT note_id FROM widget_selections)
+        """
+    )
     suspend fun deleteFromGroupExcept(groupId: String, keepIds: List<String>)
+}
+
+@Dao
+interface WidgetSelectionDao {
+    @Query("SELECT DISTINCT note_id FROM widget_selections")
+    fun observePinnedNoteIds(): Flow<List<String>>
+
+    @Query("SELECT note_id FROM widget_selections WHERE group_id = :groupId")
+    suspend fun pinnedNoteIds(groupId: String): List<String>
+
+    @Query("SELECT * FROM widget_selections WHERE app_widget_id = :appWidgetId")
+    suspend fun get(appWidgetId: Int): WidgetSelectionEntity?
+
+    @Query("SELECT * FROM widget_selections WHERE app_widget_id = :appWidgetId")
+    fun observe(appWidgetId: Int): Flow<WidgetSelectionEntity?>
+
+    @Upsert
+    suspend fun upsert(selection: WidgetSelectionEntity)
+
+    @Query("DELETE FROM widget_selections WHERE app_widget_id IN (:appWidgetIds)")
+    suspend fun delete(appWidgetIds: List<Int>)
 }
 
 @Dao

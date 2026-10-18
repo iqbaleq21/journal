@@ -41,3 +41,11 @@ data class NoteEntity(
 data class AuthorEntity(@PrimaryKey val id: String, @ColumnInfo(name = "display_name") val displayName: String)
 
 data class NoteWithAuthor(@Embedded val note: NoteEntity, @ColumnInfo(name = "author_name") val authorName: String?)
+
+/** Pilihan catatan per widget. Catatan di sini tidak ikut dibuang oleh batas cache per grup. */
+@Entity(tableName = "widget_selections")
+data class WidgetSelectionEntity(
+    @PrimaryKey @ColumnInfo(name = "app_widget_id") val appWidgetId: Int,
+    @ColumnInfo(name = "note_id") val noteId: String,
+    @ColumnInfo(name = "group_id") val groupId: String
+)

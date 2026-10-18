@@ -5,9 +5,11 @@ import com.iqbal.journal.domain.model.Note
 import com.iqbal.journal.domain.model.NoteColor
 import com.iqbal.journal.domain.model.Outcome
 import com.iqbal.journal.domain.model.Profile
+import com.iqbal.journal.domain.model.WidgetSelection
 import com.iqbal.journal.domain.repository.GroupRepository
 import com.iqbal.journal.domain.repository.NoteRepository
 import com.iqbal.journal.domain.repository.ProfileRepository
+import com.iqbal.journal.domain.repository.WidgetRepository
 import java.time.Instant
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
@@ -72,6 +74,8 @@ class FakeNoteRepository : NoteRepository {
     val updateCalls = mutableListOf<Pair<String, String>>()
     val deleteCalls = mutableListOf<String>()
 
+    override val changes: Flow<Unit> = notes.map { }
+
     override fun notes(groupId: String): Flow<List<Note>> = notes.map { list -> list.filter { it.groupId == groupId } }
 
     override fun note(noteId: String): Flow<Note?> = notes.map { list -> list.firstOrNull { it.id == noteId } }
@@ -117,5 +121,23 @@ class FakeNoteRepository : NoteRepository {
                 createdAt = Instant.EPOCH,
                 updatedAt = Instant.EPOCH
             )
+    }
+}
+
+class FakeWidgetRepository : WidgetRepository {
+    val selections = MutableStateFlow<Map<Int, WidgetSelection>>(emptyMap())
+
+    override val pinnedNoteIds: Flow<Set<String>> = selections.map { map -> map.values.map { it.noteId }.toSet() }
+
+    override suspend fun selection(appWidgetId: Int): WidgetSelection? = selections.value[appWidgetId]
+
+    override fun observeSelection(appWidgetId: Int): Flow<WidgetSelection?> = selections.map { it[appWidgetId] }
+
+    override suspend fun select(selection: WidgetSelection) {
+        selections.value = selections.value + (selection.appWidgetId to selection)
+    }
+
+    override suspend fun remove(appWidgetIds: List<Int>) {
+        selections.value = selections.value - appWidgetIds.toSet()
     }
 }

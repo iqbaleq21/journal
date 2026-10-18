@@ -3,6 +3,7 @@ package com.iqbal.journal.data.repository
 import com.iqbal.journal.data.local.AuthorDao
 import com.iqbal.journal.data.local.NoteDao
 import com.iqbal.journal.data.local.NoteWithAuthor
+import com.iqbal.journal.data.local.WidgetSelectionDao
 import com.iqbal.journal.data.remote.AuthorDto
 import com.iqbal.journal.data.remote.NoteChange
 import com.iqbal.journal.data.remote.NoteDto
@@ -19,6 +20,7 @@ import java.io.IOException
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -28,11 +30,18 @@ import org.junit.Test
 class NoteRepositoryImplTest {
     private val remote = mockk<NoteRemoteDataSource>()
     private val profileRemote = mockk<ProfileRemoteDataSource>()
-    private val noteDao = mockk<NoteDao>(relaxUnitFun = true)
+    private val noteDao = mockk<NoteDao>(relaxUnitFun = true) { every { observeVersion() } returns emptyFlow() }
     private val authorDao = mockk<AuthorDao>(relaxUnitFun = true)
+    private val widgetSelectionDao = mockk<WidgetSelectionDao> { coEvery { pinnedNoteIds(any()) } returns emptyList() }
     private val now = Instant.parse("2026-10-18T05:00:00Z")
     private val repository =
-        NoteRepositoryImpl(remote, profileRemote, noteDao, authorDao, Clock.fixed(now, ZoneOffset.UTC))
+        NoteRepositoryImpl(
+            remote,
+            noteDao,
+            AuthorCache(profileRemote, authorDao),
+            widgetSelectionDao,
+            Clock.fixed(now, ZoneOffset.UTC)
+        )
 
     private fun dto(id: String = "n1", authorId: String = "a1", deletedAt: String? = null) = NoteDto(
         id = id,
@@ -54,6 +63,22 @@ class NoteRepositoryImplTest {
 
         coVerify { noteDao.replaceForGroup("g1", notes.map { it.toEntity() }) }
         coVerify { authorDao.upsertAll(listOf(AuthorDto("a1", "Ibu").toEntity())) }
+    }
+
+    @Test
+    fun `catatan widget di luar batas cache dicek ulang dan penghapusannya diterapkan`() = runTest {
+        coEvery { remote.fetchLatest(any(), any()) } returns listOf(dto("n1"))
+        coEvery { widgetSelectionDao.pinnedNoteIds("g1") } returns listOf("n1", "lama", "dihapus", "dibersihkan")
+        coEvery { remote.fetchByIds(setOf("lama", "dihapus", "dibersihkan")) } returns
+            listOf(dto("lama"), dto("dihapus", deletedAt = "2026-10-18T04:00:00+00:00"))
+        coEvery { authorDao.exists(any()) } returns true
+        coEvery { profileRemote.fetchAuthors(any()) } returns emptyList()
+
+        repository.refresh("g1")
+
+        coVerify { noteDao.upsert(dto("lama").toEntity()) }
+        coVerify { noteDao.deleteById("dihapus") }
+        coVerify { noteDao.deleteById("dibersihkan") }
     }
 
     @Test
