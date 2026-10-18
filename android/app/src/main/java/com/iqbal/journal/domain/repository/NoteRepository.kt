@@ -17,6 +17,12 @@ interface NoteRepository {
     /** Ambil ulang catatan terbaru sebuah grup dari server ke cache lokal. */
     suspend fun refresh(groupId: String): Outcome<Unit>
 
+    /** Ambil satu catatan dari server ke cache lokal; null jika sudah dihapus. */
+    suspend fun syncNote(noteId: String): Outcome<Note?>
+
+    /** Buang catatan lama di luar batas cache per grup; catatan yang dipakai widget dipertahankan. */
+    suspend fun trimCache()
+
     suspend fun create(groupId: String, content: String): Outcome<Note>
 
     suspend fun update(noteId: String, content: String): Outcome<Note>

@@ -5,6 +5,7 @@ internal object Tables {
     const val PROFILES = "profiles"
     const val GROUPS = "groups"
     const val NOTES = "notes"
+    const val DEVICES = "devices"
 }
 
 internal object Rpc {

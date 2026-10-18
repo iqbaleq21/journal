@@ -46,6 +46,7 @@ import com.iqbal.journal.R
 import com.iqbal.journal.domain.model.Group
 import com.iqbal.journal.domain.model.Note
 import com.iqbal.journal.domain.model.NoteColor
+import com.iqbal.journal.ui.common.RequestNotificationPermission
 import com.iqbal.journal.ui.common.messageRes
 import com.iqbal.journal.ui.components.NoteCard
 import com.iqbal.journal.ui.components.Wordmark
@@ -63,6 +64,7 @@ fun HomeRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    RequestNotificationPermission()
     HomeScreen(
         state = state,
         onSelectGroup = viewModel::onSelectGroup,

@@ -82,6 +82,21 @@ class NoteRepositoryImplTest {
     }
 
     @Test
+    fun `sinkron satu catatan menyimpan versi server, atau membuangnya bila sudah dihapus`() = runTest {
+        coEvery { remote.fetchByIds(listOf("n1")) } returns listOf(dto("n1"))
+        coEvery { remote.fetchByIds(listOf("hilang")) } returns emptyList()
+        coEvery { authorDao.exists(any()) } returns true
+        every { noteDao.observeById("n1") } returns flowOf(NoteWithAuthor(dto("n1").toEntity(), "Ibu"))
+        every { noteDao.observeById("hilang") } returns flowOf(null)
+
+        assertEquals("n1", (repository.syncNote("n1") as Outcome.Success).value?.id)
+        coVerify { noteDao.upsert(dto("n1").toEntity()) }
+
+        assertEquals(Outcome.Success(null), repository.syncNote("hilang"))
+        coVerify { noteDao.deleteById("hilang") }
+    }
+
+    @Test
     fun `refresh tanpa koneksi menjadi error jaringan`() = runTest {
         coEvery { remote.fetchLatest(any(), any()) } throws IOException("offline")
 

@@ -85,6 +85,19 @@ class FakeNoteRepository : NoteRepository {
         return refreshResult
     }
 
+    /** Isi server tiruan untuk syncNote; catatan yang tidak ada di sini dianggap sudah dihapus. */
+    val serverNotes = mutableMapOf<String, Note>()
+    var syncFailure: Outcome.Failure? = null
+
+    override suspend fun syncNote(noteId: String): Outcome<Note?> {
+        syncFailure?.let { return it }
+        val note = serverNotes[noteId]
+        notes.value = notes.value.filterNot { it.id == noteId } + listOfNotNull(note)
+        return Outcome.Success(note)
+    }
+
+    override suspend fun trimCache() = Unit
+
     override suspend fun create(groupId: String, content: String): Outcome<Note> {
         createCalls += groupId to content
         writeFailure?.let { return it }

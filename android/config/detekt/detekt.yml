@@ -8,6 +8,9 @@ complexity:
     ignoreAnnotated: ['Composable']
   LongMethod:
     ignoreAnnotated: ['Composable']
+  TooManyFunctions:
+    # Implementasi repository: jumlah fungsinya ditentukan interface, jadi yang dihitung hanya fungsi milik kelas.
+    ignoreOverridden: true
 
 style:
   MagicNumber:

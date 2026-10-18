@@ -27,6 +27,9 @@ data class CreateGroupResultDto(
 )
 
 @Serializable
+data class DeviceDto(@SerialName("fcm_token") val fcmToken: String, @SerialName("user_id") val userId: String)
+
+@Serializable
 data class AuthorDto(val id: String, @SerialName("display_name") val displayName: String)
 
 @Serializable

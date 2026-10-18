@@ -5,7 +5,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.iqbal.journal.domain.model.Outcome
-import com.iqbal.journal.domain.repository.GroupRepository
+import com.iqbal.journal.domain.repository.DeviceRepository
 import com.iqbal.journal.domain.repository.NoteRepository
 import com.iqbal.journal.domain.repository.ProfileRepository
 import javax.inject.Inject
@@ -13,7 +13,6 @@ import javax.inject.Singleton
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
@@ -24,8 +23,9 @@ import kotlinx.coroutines.launch
 @Singleton
 class ForegroundSync @Inject constructor(
     private val profileRepository: ProfileRepository,
-    private val groupRepository: GroupRepository,
-    private val noteRepository: NoteRepository
+    private val noteRepository: NoteRepository,
+    private val deviceRepository: DeviceRepository,
+    private val fullSync: FullSync
 ) {
     fun start(processLifecycle: Lifecycle) {
         processLifecycle.coroutineScope.launch {
@@ -39,18 +39,17 @@ class ForegroundSync @Inject constructor(
     }
 
     private suspend fun syncWhileVisible() {
+        // Token push bisa berubah tanpa onNewToken sempat terkirim (mis. offline),
+        // jadi didaftarkan ulang setiap app dibuka.
+        val registration = deviceRepository.registerThisDevice()
+        if (registration is Outcome.Failure) Log.w(TAG, "Gagal mendaftarkan token push: ${registration.error}")
         while (true) {
             // Refresh setelah langganan aktif, bukan sebelumnya, agar perubahan di antaranya tidak terlewat.
             // Normalnya tidak pernah selesai; jika koneksi putus, putaran berikut berlangganan dan refresh lagi.
-            val result = noteRepository.listenForChanges(onSubscribed = ::refreshAll)
+            val result = noteRepository.listenForChanges(onSubscribed = { fullSync.run() })
             if (result is Outcome.Failure) Log.w(TAG, "Realtime terputus: ${result.error}")
             delay(RECONNECT_DELAY_MILLIS)
         }
-    }
-
-    private suspend fun refreshAll() {
-        groupRepository.refresh()
-        groupRepository.groups.first().forEach { noteRepository.refresh(it.id) }
     }
 
     private companion object {

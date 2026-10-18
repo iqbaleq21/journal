@@ -42,6 +42,15 @@ class NoteRepositoryImpl @Inject constructor(
         authorCache.refresh(notes.map { it.authorId }.toSet())
     }
 
+    override suspend fun syncNote(noteId: String): Outcome<Note?> = outcomeOf {
+        val note = remote.fetchByIds(listOf(noteId)).firstOrNull()
+        // Tidak dikembalikan server = sudah dihapus permanen.
+        if (note == null) noteDao.deleteById(noteId) else apply(note)
+        noteDao.observeById(noteId).first()?.toDomain()
+    }
+
+    override suspend fun trimCache() = noteDao.deleteBeyondLimit(LOCAL_NOTES_PER_GROUP)
+
     override suspend fun create(groupId: String, content: String): Outcome<Note> = outcomeOf {
         save(remote.insert(groupId, NoteRules.normalizeContent(content)))
     }

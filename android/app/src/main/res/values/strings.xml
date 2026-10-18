@@ -105,6 +105,12 @@
     <string name="widget_picker_preview_empty">Pilih catatan di bawah</string>
     <string name="widget_picker_open_app">Buka jOURnal</string>
 
+    <!-- Notifikasi -->
+    <string name="notification_channel_new_notes">Catatan baru</string>
+    <string name="notification_channel_sync">Sinkronisasi</string>
+    <string name="notification_new_note">%1$s: %2$s</string>
+    <string name="notification_syncing">Memperbarui catatan…</string>
+
     <!-- Error -->
     <string name="error_network">Tidak ada koneksi internet. Coba lagi.</string>
     <string name="error_profile_required">Lengkapi profil dulu.</string>

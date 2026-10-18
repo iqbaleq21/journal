@@ -89,6 +89,16 @@ interface NoteDao {
     @Query("DELETE FROM notes WHERE id = :id")
     suspend fun deleteById(id: String)
 
+    // Hitungan berkorelasi, bukan window function: SQLite di Android 8 belum mendukungnya.
+    @Query(
+        """
+        DELETE FROM notes WHERE id NOT IN (SELECT note_id FROM widget_selections)
+        AND (SELECT COUNT(*) FROM notes newer
+             WHERE newer.group_id = notes.group_id AND newer.updated_at > notes.updated_at) >= :limitPerGroup
+        """
+    )
+    suspend fun deleteBeyondLimit(limitPerGroup: Long)
+
     @Query(
         """
         DELETE FROM notes WHERE group_id = :groupId AND id NOT IN (:keepIds)
