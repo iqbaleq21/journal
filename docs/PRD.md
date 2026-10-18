@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Nama** | **jOURnal**: "OUR" ditulis kapital untuk menekankan catatan bersama |
-| **Status** | v0.5, M0–M5 selesai |
+| **Status** | v0.5, M0–M6 selesai |
 | **Tanggal** | 2026-10-18 |
 | **Platform** | Android saja |
 | **Package ID** | `com.iqbal.journal` |
@@ -105,7 +105,7 @@ Aplikasi catatan untuk **sekelompok kecil orang yang saling terhubung** (pasanga
   - Catatan dihapus → "Catatan ini sudah dihapus. Ketuk untuk memilih yang lain."
   - Keluar / dikeluarkan dari grup → "Kamu tidak lagi di grup ini."
   - Profil belum diisi → "Buka jOURnal untuk mulai."
-- Pilihan per widget disimpan lokal di Room (`widget_selections`: `appWidgetId → note_id, group_id`), agar lapisan data tahu catatan mana yang dipakai widget (§5.6).
+- Pilihan per widget disimpan lokal di Room (`widget_selections`: `appWidgetId → note_id, group_id`), agar lapisan data tahu catatan mana yang dipakai widget (§5.6). `note_id` null = mode "catatan terbaru" (US-16): widget mengikuti catatan yang terakhir diubah di grup itu.
 - Widget **hanya membaca data lokal** (Room). Widget tidak pernah melakukan request jaringan sendiri.
 
 ### 5.5 Sinkronisasi & Notifikasi
@@ -298,7 +298,7 @@ select cron.schedule('purge-deleted-notes', '0 3 * * *',
 | M3 | Widget | US-7, US-9 | Widget menampilkan catatan pilihan dari Room; bisa diganti | ✅ 2026-10-18 (pasang, Atur ulang, tap membuka catatan, state dihapus; update saat app terbuka). Update saat app tertutup menyusul di M4. |
 | M4 | Push & Sinkron background | US-8, US-11, Edge Function, WorkManager | Widget HP lain update < 10 detik saat app tertutup | ✅ 2026-10-18 (proses app dimatikan: widget berubah ±5 detik setelah edit; notifikasi catatan baru tampil) |
 | M5 | Polish | US-12, US-13, US-14, state kosong/error, ikon | APK release ditandatangani & dibagikan | ✅ 2026-10-18 (APK release 4,1 MB, R8 aktif, diuji di emulator: Kenalan, gabung, tulis, Realtime, push saat app mati). Membagikan APK ke anggota dilakukan pemilik. |
-| M6 | Nice to have | US-15, US-16 | — | |
+| M6 | Nice to have | US-15, US-16 | — | ✅ 2026-10-18 (warna tersimpan di server & widget; widget mode "terbaru" berganti ±4 dtk saat app tertutup) |
 
 ## 11. Risiko & Mitigasi
 
