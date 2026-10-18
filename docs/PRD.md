@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Nama** | **jOURnal**: "OUR" ditulis kapital untuk menekankan catatan bersama |
-| **Status** | v0.4, M0–M4 selesai |
+| **Status** | v0.5, M0–M5 selesai |
 | **Tanggal** | 2026-10-18 |
 | **Platform** | Android saja |
 | **Package ID** | `com.iqbal.journal` |
@@ -12,6 +12,7 @@
 Dokumen ini adalah sumber kebenaran untuk scope dan arsitektur. Kalau implementasi menyimpang dari dokumen ini, perbarui dokumen ini dulu.
 
 **Riwayat perubahan**
+- v0.5: Tidak ada logout di Pengaturan: akun anonim yang di-logout tidak bisa dipulihkan. Diganti peringatan bahwa identitas terikat ke HP ini (§5.1, §9).
 - v0.4: Login Google dihapus. Diganti profil sederhana (**nama + email**) di atas **Supabase Anonymous Sign-In** (§5.1).
 - v0.3: Nama **jOURnal**. Catatan sendiri boleh dipilih di widget. Ditambah aturan retensi data (§5.6).
 - v0.2 — Dari "tepat 2 orang" menjadi **grup beberapa orang**; widget menampilkan **1 catatan yang dipilih**; login **hanya Google**.
@@ -74,7 +75,7 @@ Aplikasi catatan untuk **sekelompok kecil orang yang saling terhubung** (pasanga
 - Tidak ada login. Saat pertama dibuka, app menampilkan layar **Kenalan**: isi **nama** (wajib, 1–40 karakter) dan **email** (wajib, format valid, **tidak diverifikasi** di v1).
 - Di belakang layar app memanggil **Supabase Anonymous Sign-In** (`signInAnonymously`), sehingga setiap instalasi punya `auth.uid()` sendiri. Ini wajib agar RLS tetap bekerja; tanpa identitas, siapa pun yang memegang anon key bisa membaca semua data.
 - Setelah sign-in anonim, app menyimpan nama & email ke `profiles` (insert milik sendiri, dijaga RLS). Keduanya bisa diubah di Pengaturan.
-- Sesi disimpan; app tidak pernah meminta login lagi.
+- Sesi disimpan; app tidak pernah meminta login lagi. Tidak ada logout (akun anonim tidak bisa dipulihkan setelah logout).
 - **Konsekuensi**: identitas terikat ke instalasi. Uninstall, hapus data app, atau ganti HP = akun baru. Pengguna harus gabung grup lagi; catatan lamanya tetap ada tetapi tidak bisa diedit oleh akun baru.
 - **Jalan upgrade (nanti)**: akun anonim bisa dijadikan permanen dengan menautkan email terverifikasi (`updateUser(email)` + OTP) tanpa kehilangan data. Butuh SMTP sendiri karena email bawaan Supabase sangat dibatasi.
 - Setting Supabase: *Authentication → Sign In / Providers → Allow anonymous sign-ins* = aktif.
@@ -112,6 +113,8 @@ Aplikasi catatan untuk **sekelompok kecil orang yang saling terhubung** (pasanga
 - Saat aplikasi tertutup: setiap perubahan catatan memicu **FCM data message (high priority)** ke **semua anggota grup selain penulis** → app bangun di background → ambil catatan → simpan ke Room → update widget yang menampilkan catatan itu.
 - Fallback: **WorkManager** periodik (15 menit, minimum Android) untuk sinkron jika push terlewat.
 - Notifikasi sistem (US-11) hanya untuk catatan **baru** (bukan edit); bisa dimatikan per grup di pengaturan.
+
+- Offline (US-12): tulis/edit/hapus langsung tersimpan di Room dan masuk antrean `pending_ops`; dikirim berurutan saat online (langsung, saat app dibuka, atau lewat WorkManager). ID catatan baru dibuat di HP agar kirim ulang tidak menggandakan catatan. Selama ada perubahan tertunda, versi server tidak menimpa catatan itu; perubahan yang ditolak server dibuang dan diganti versi server.
 
 ### 5.6 Retensi Data
 - **Server** menyimpan semua catatan tanpa batas.
@@ -281,7 +284,7 @@ select cron.schedule('purge-deleted-notes', '0 3 * * *',
 3. **Beranda**: pemilih grup di atas (dropdown / tab), daftar catatan grup, FAB "Tulis".
 4. **Editor**: textarea, counter 0/500, simpan / hapus.
 5. **Detail grup**: nama, daftar anggota, kode undangan + share, keluar grup; aksi owner.
-6. **Pengaturan**: notifikasi per grup, tips optimasi baterai, logout.
+6. **Pengaturan**: ubah nama & email, notifikasi per grup, tips optimasi baterai, peringatan identitas terikat ke HP ini. Tanpa logout (lihat riwayat v0.5).
 7. **Konfigurasi widget**: pilih grup → pilih catatan.
 8. **Widget**: satu catatan terpilih.
 
@@ -294,7 +297,7 @@ select cron.schedule('purge-deleted-notes', '0 3 * * *',
 | M2 | Catatan | US-4, US-5, US-6, Room + Realtime | Catatan muncul di semua HP anggota saat app terbuka | ✅ 2026-10-18 (Realtime diuji: tambah/edit/hapus dari akun lain tampil < 2 detik). "Muat lebih banyak" (§5.6) belum dibuat. |
 | M3 | Widget | US-7, US-9 | Widget menampilkan catatan pilihan dari Room; bisa diganti | ✅ 2026-10-18 (pasang, Atur ulang, tap membuka catatan, state dihapus; update saat app terbuka). Update saat app tertutup menyusul di M4. |
 | M4 | Push & Sinkron background | US-8, US-11, Edge Function, WorkManager | Widget HP lain update < 10 detik saat app tertutup | ✅ 2026-10-18 (proses app dimatikan: widget berubah ±5 detik setelah edit; notifikasi catatan baru tampil) |
-| M5 | Polish | US-12, US-13, US-14, state kosong/error, ikon | APK release ditandatangani & dibagikan | |
+| M5 | Polish | US-12, US-13, US-14, state kosong/error, ikon | APK release ditandatangani & dibagikan | ✅ 2026-10-18 (APK release 4,1 MB, R8 aktif, diuji di emulator: Kenalan, gabung, tulis, Realtime, push saat app mati). Membagikan APK ke anggota dilakukan pemilik. |
 | M6 | Nice to have | US-15, US-16 | — | |
 
 ## 11. Risiko & Mitigasi

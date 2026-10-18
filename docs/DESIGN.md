@@ -73,9 +73,10 @@ Spasi kelipatan 4 dp. Padding layar 20 dp, jarak antar kartu 12 dp.
 |---|---|---|
 | 1 | Kenalan | Ilustrasi tumpukan catatan + bentuk ekspresif, input nama & email, tombol "Mulai" (tanpa login) |
 | 2 | Mulai | Muncul jika belum punya grup: kartu "Buat grup baru" & "Gabung dengan kode" (6 kotak) |
-| 3 | Beranda | Chip pemilih grup, kartu ringkasan grup (tap → detail; sampai layar Detail grup ada di M5, tap membuka lembar kode undangan; tumpukan avatar anggota menyusul bersama Detail grup), grid masonry catatan, badge "Di widget" (M3), FAB "Tulis" |
+| 3 | Beranda | Chip pemilih grup, kartu ringkasan grup dengan tumpukan avatar anggota (tap → Detail grup), tombol Pengaturan di kanan atas, grid masonry catatan, badge "Di widget" (M3), FAB "Tulis" |
 | 4 | Editor | Kartu catatan besar sesuai warna, counter 0/500, pemilih warna (US-15, M6), hapus dengan konfirmasi. Catatan orang lain tampil read-only. |
-| 5 | Detail grup | Kode undangan (bagikan / buat ulang), daftar anggota, keluar grup |
+| 5 | Detail grup | Kode undangan (bagikan / buat ulang), daftar anggota, keluar grup. Aksi pemilik (ganti nama, buat ulang kode, keluarkan anggota lewat menu ⋮) hanya tampil untuk pemilik; semua aksi berisiko memakai dialog konfirmasi. |
+| 5b | Pengaturan | Tidak ada di mockup; mengikuti gaya kartu yang sama: Profil (nama, email, peringatan identitas), Notifikasi per grup (switch), Optimasi baterai (status + tombol ke pengaturan sistem), versi app. |
 | 6 | Pilih catatan widget | Preview widget di atas, pilih grup → radio catatan, "Pasang widget" |
 | 7 | Widget | Ukuran 4×2 dan 2×2, varian terang/gelap, state "catatan dihapus". Batasan Glance: font memakai sans-serif sistem (Glance tidak mendukung font dari `res/font`), sudut membulat hanya di Android 12+, dan waktu relatif baru diperbarui saat widget di-render ulang. |
 

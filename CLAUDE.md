@@ -40,6 +40,8 @@ Semua perintah Gradle dari folder `android/`, dengan `JAVA_HOME=/usr/lib/jvm/jav
 
 Emulator (AVD `jadwal`): RAM mesin ini terbatas dan sesi pernah di-kill `systemd-oomd`. Build dulu lalu `./gradlew --stop`, baru jalankan `emulator -avd jadwal -memory 2048 -no-window -no-snapshot-save`; matikan dengan `adb shell sync && adb emu kill` (tanpa `sync`, tulisan SQLite terakhir bisa hilang).
 
+APK release: `./gradlew assembleRelease` → `app/build/outputs/apk/release/app-release.apk`. Signing dibaca dari `android/keystore.properties` (di-gitignore) yang menunjuk ke `~/.android-keystores/journal-release.jks`. Keystore dan password-nya **wajib dibackup**: tanpa keystore yang sama, update APK tidak bisa dipasang di atas versi lama. Tanpa `keystore.properties`, APK release dibangun tanpa tanda tangan. Debug dan release beda tanda tangan, jadi berpindah di antara keduanya butuh uninstall (data lokal hilang).
+
 Konfigurasi app (`SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`) dibaca Gradle dari `.env` di root repo.
 
 ## Progres
@@ -49,4 +51,5 @@ Status milestone dicatat di `docs/PRD.md` bagian 10.
 - **M2 (catatan) ✅ selesai 2026-10-18**: Beranda grid masonry + FAB Tulis, Editor (tulis/edit/hapus, read-only untuk catatan orang lain); Room v2 (`notes`, `authors`, AutoMigration 1→2); `ForegroundSync` (ProcessLifecycleOwner) refresh + Realtime selama app terlihat. Diuji di emulator dengan akun kedua lewat REST: tambah/edit/hapus tampil langsung, RLS menolak edit catatan orang lain.
 - **M3 (widget) ✅ selesai 2026-10-18**: widget Glance (`widget/`) membaca Room lewat `NoteWidgetStateLoader` (Flow, dikumpulkan di `provideContent` karena `update()` hanya me-recompose sesi yang hidup); `WidgetConfigActivity` untuk pasang & Atur ulang; Room v3 `widget_selections`; `NoteWidgetUpdater` me-render ulang widget saat cache berubah; badge "Di widget". Realtime: topik channel unik per langganan dan refresh baru setelah pesan sistem `postgres_changes` (keduanya menutup celah perubahan yang hilang, sudah diuji).
 - **M4 (push & sinkron background) ✅ selesai 2026-10-18**: trigger `notes` → `pg_net` → Edge Function `notify-members` → FCM data message → `FcmService` → `NoteSyncWorker` (expedited) memperbarui Room, widget, dan notifikasi catatan baru; token di `devices` (didaftarkan saat app dibuka & `onNewToken` lewat `RegisterDeviceWorker`); `PeriodicSyncWorker` 15 menit + rapikan cache. Diuji di emulator dengan proses app dimatikan (`am kill`, bukan force-stop): widget berubah ±5 detik. Catatan: setelah `adb install` app harus dibuka sekali sebelum bisa menerima FCM.
-- Berikutnya: **M5** (polish: US-12 offline, US-13 keluar grup, US-14 aksi owner, Pengaturan, state kosong/error, APK release).
+- **M5 (polish) ✅ selesai 2026-10-18**: Detail grup (US-13/14) + anggota di Room (`members`); Pengaturan (profil, notifikasi per grup, optimasi baterai, tanpa logout); offline (US-12) lewat antrean `pending_ops` + `NoteOutbox` + `OutboxWorker`; Room v5; navigasi kembali tidak pernah membuang layar awal. APK release ditandatangani (R8, 4,1 MB) dan diuji di emulator.
+- MVP (M0–M5) selesai. M6 (US-15 warna catatan, US-16 widget "catatan terbaru") opsional.
