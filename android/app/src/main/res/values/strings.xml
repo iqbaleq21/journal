@@ -38,10 +38,42 @@
     <string name="home_notes_title">Catatan</string>
     <string name="home_notes_empty_title">Belum ada catatan</string>
     <string name="home_notes_empty_body">Catatan di grup ini akan tampil di sini.</string>
+    <string name="home_notes_order">Terbaru dulu</string>
+    <string name="home_write">Tulis</string>
+    <string name="home_group_meta">%1$s · %2$s</string>
     <plurals name="home_member_count">
         <item quantity="one">%d anggota</item>
         <item quantity="other">%d anggota</item>
     </plurals>
+    <plurals name="home_note_count">
+        <item quantity="one">%d catatan</item>
+        <item quantity="other">%d catatan</item>
+    </plurals>
+
+    <!-- Catatan -->
+    <string name="note_author_you">Kamu</string>
+    <string name="note_author_unknown">Anggota</string>
+    <string name="note_meta_separator">· %1$s</string>
+    <string name="time_just_now">baru saja</string>
+    <string name="time_minutes">%1$d mnt</string>
+    <string name="time_hours">%1$d j</string>
+    <string name="time_yesterday">kemarin</string>
+    <string name="time_days">%1$d hr</string>
+
+    <!-- Editor -->
+    <string name="editor_save">Simpan</string>
+    <string name="editor_label">CATATAN</string>
+    <string name="editor_placeholder">Tulis sesuatu untuk grupmu…</string>
+    <string name="editor_new">Catatan baru</string>
+    <string name="editor_by_you">Ditulis oleh kamu · %1$s</string>
+    <string name="editor_by">Ditulis oleh %1$s · %2$s</string>
+    <string name="editor_counter">%1$d/%2$d</string>
+    <string name="editor_empty_error">Catatan belum diisi.</string>
+    <string name="editor_read_only">Hanya penulis yang bisa mengubah catatan ini.</string>
+    <string name="editor_delete">Hapus catatan</string>
+    <string name="editor_delete_title">Hapus catatan ini?</string>
+    <string name="editor_delete_body">Catatan akan hilang dari HP semua anggota grup.</string>
+    <string name="editor_delete_confirm">Hapus</string>
 
     <!-- Undangan -->
     <string name="invite_title">Kode undangan</string>

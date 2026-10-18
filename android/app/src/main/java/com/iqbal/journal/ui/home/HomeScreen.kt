@@ -13,7 +13,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.items as staggeredItems
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -40,20 +44,30 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.iqbal.journal.R
 import com.iqbal.journal.domain.model.Group
+import com.iqbal.journal.domain.model.Note
+import com.iqbal.journal.domain.model.NoteColor
 import com.iqbal.journal.ui.common.messageRes
+import com.iqbal.journal.ui.components.NoteCard
 import com.iqbal.journal.ui.components.Wordmark
+import com.iqbal.journal.ui.theme.FabShape
 import com.iqbal.journal.ui.theme.JournalTheme
 import com.iqbal.journal.ui.theme.Sizes
 import com.iqbal.journal.ui.theme.Spacing
+import java.time.Instant
 
 @Composable
-fun HomeRoute(onAddGroup: () -> Unit, viewModel: HomeViewModel = hiltViewModel()) {
+fun HomeRoute(
+    onAddGroup: () -> Unit,
+    onOpenEditor: (groupId: String, noteId: String?) -> Unit,
+    viewModel: HomeViewModel = hiltViewModel()
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     HomeScreen(
         state = state,
         onSelectGroup = viewModel::onSelectGroup,
         onAddGroup = onAddGroup,
+        onOpenEditor = onOpenEditor,
         onInviteClick = viewModel::onInviteClick,
         onInviteDismiss = viewModel::onInviteDismiss,
         onShareInvite = { group, code -> context.shareInvite(group.name, code) },
@@ -66,6 +80,7 @@ fun HomeScreen(
     state: HomeUiState,
     onSelectGroup: (String) -> Unit,
     onAddGroup: () -> Unit,
+    onOpenEditor: (groupId: String, noteId: String?) -> Unit,
     onInviteClick: () -> Unit,
     onInviteDismiss: () -> Unit,
     onShareInvite: (Group, String) -> Unit,
@@ -80,7 +95,13 @@ fun HomeScreen(
         }
     }
 
-    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { innerPadding ->
+    val selectedGroup = state.selectedGroup
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        floatingActionButton = {
+            if (selectedGroup != null) WriteButton(onClick = { onOpenEditor(selectedGroup.id, null) })
+        }
+    ) { innerPadding ->
         Column(
             verticalArrangement = Arrangement.spacedBy(Spacing.medium),
             modifier = Modifier
@@ -98,25 +119,30 @@ fun HomeScreen(
                 onSelect = onSelectGroup,
                 onAdd = onAddGroup
             )
-            state.selectedGroup?.let { group ->
+            if (selectedGroup != null) {
                 GroupSummaryCard(
-                    group = group,
+                    group = selectedGroup,
+                    noteCount = state.notes.size,
                     onClick = onInviteClick,
                     modifier = Modifier.padding(horizontal = Spacing.screen)
                 )
             }
-            Text(
-                stringResource(R.string.home_notes_title),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(horizontal = Spacing.large)
-            )
-            EmptyNotes(Modifier.weight(1f))
+            NotesHeader()
+            if (state.notes.isEmpty()) {
+                EmptyNotes(Modifier.weight(1f))
+            } else {
+                NotesGrid(
+                    notes = state.notes,
+                    myUserId = state.myUserId,
+                    onNoteClick = { note -> onOpenEditor(note.groupId, note.id) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
     }
 
-    val group = state.selectedGroup
-    if (state.isInviteSheetOpen && group != null) {
-        InviteSheet(group = group, onShare = { onShareInvite(group, it) }, onDismiss = onInviteDismiss)
+    if (state.isInviteSheetOpen && selectedGroup != null) {
+        InviteSheet(group = selectedGroup, onShare = { onShareInvite(selectedGroup, it) }, onDismiss = onInviteDismiss)
     }
 }
 
@@ -149,7 +175,7 @@ private fun GroupChips(groups: List<Group>, selectedGroupId: String?, onSelect: 
 }
 
 @Composable
-private fun GroupSummaryCard(group: Group, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun GroupSummaryCard(group: Group, noteCount: Int, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
         onClick = onClick,
         shape = MaterialTheme.shapes.large,
@@ -164,7 +190,11 @@ private fun GroupSummaryCard(group: Group, onClick: () -> Unit, modifier: Modifi
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
                 Text(group.name, style = MaterialTheme.typography.titleLarge)
                 Text(
-                    pluralStringResource(R.plurals.home_member_count, group.memberCount, group.memberCount),
+                    stringResource(
+                        R.string.home_group_meta,
+                        pluralStringResource(R.plurals.home_member_count, group.memberCount, group.memberCount),
+                        pluralStringResource(R.plurals.home_note_count, noteCount, noteCount)
+                    ),
                     style = MaterialTheme.typography.labelMedium
                 )
             }
@@ -182,25 +212,6 @@ private fun GroupSummaryCard(group: Group, onClick: () -> Unit, modifier: Modifi
     }
 }
 
-@Composable
-private fun EmptyNotes(modifier: Modifier = Modifier) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(Spacing.small, Alignment.CenterVertically),
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = Spacing.extraLarge)
-    ) {
-        Text(stringResource(R.string.home_notes_empty_title), style = MaterialTheme.typography.titleMedium)
-        Text(
-            stringResource(R.string.home_notes_empty_body),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
-    }
-}
-
 private fun Context.shareInvite(groupName: String, code: String) {
     val send = Intent(Intent.ACTION_SEND)
         .setType("text/plain")
@@ -215,11 +226,17 @@ private fun HomeScreenPreview() {
         Group("1", "Rumah", "a", memberCount = 4, inviteCode = "K7QM4X", inviteExpiresAt = null),
         Group("2", "Kita Berdua", "a", memberCount = 2, inviteCode = null, inviteExpiresAt = null)
     )
+    val previewNotes = listOf(
+        previewNote("n1", "Kode wifi rumah: rumahbahagia2026", NoteColor.Butter, "a"),
+        previewNote("n2", "Arisan keluarga Minggu, 25 Okt di rumah Tante Rina. Bawa bolu ya.", NoteColor.Mint, "b"),
+        previewNote("n3", "Galon habis, tolong pesan 2.", NoteColor.Plain, "b")
+    )
     JournalTheme {
         HomeScreen(
-            state = HomeUiState(groups = groups, selectedGroupId = "1"),
+            state = HomeUiState(groups = groups, selectedGroupId = "1", notes = previewNotes, myUserId = "a"),
             onSelectGroup = {},
             onAddGroup = {},
+            onOpenEditor = { _, _ -> },
             onInviteClick = {},
             onInviteDismiss = {},
             onShareInvite = { _, _ -> },
@@ -227,3 +244,14 @@ private fun HomeScreenPreview() {
         )
     }
 }
+
+private fun previewNote(id: String, content: String, color: NoteColor, authorId: String) = Note(
+    id = id,
+    groupId = "1",
+    authorId = authorId,
+    authorName = "Ibu",
+    content = content,
+    color = color,
+    createdAt = Instant.now(),
+    updatedAt = Instant.now()
+)

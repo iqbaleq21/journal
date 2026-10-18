@@ -3,6 +3,7 @@ package com.iqbal.journal.ui.theme
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import com.iqbal.journal.domain.model.NoteColor
 
 /** Pasangan warna latar kartu catatan dan teks sekunder di atasnya. */
 @Immutable
@@ -18,6 +19,15 @@ data class NoteColors(
     val lilac: NoteSwatch,
     val plain: NoteSwatch
 )
+
+fun NoteColors.swatchFor(color: NoteColor): NoteSwatch = when (color) {
+    NoteColor.Butter -> butter
+    NoteColor.Mint -> mint
+    NoteColor.Sky -> sky
+    NoteColor.Peach -> peach
+    NoteColor.Lilac -> lilac
+    NoteColor.Plain -> plain
+}
 
 internal val LightNoteColors = NoteColors(
     butter = NoteSwatch(Color(0xFFFFE7A3), Color(0xFF5A4A20)),

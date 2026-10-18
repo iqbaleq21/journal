@@ -20,6 +20,8 @@ object Sizes {
     val inputHeight = 56.dp
     val chipHeight = 40.dp
     val avatar = 44.dp
+    val avatarSmall = 24.dp
+    val fabHeight = 64.dp
     val iconTile = 52.dp
     val icon = 24.dp
     val progress = 20.dp

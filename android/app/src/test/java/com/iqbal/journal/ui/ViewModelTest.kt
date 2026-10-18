@@ -5,6 +5,7 @@ import com.iqbal.journal.domain.model.JournalError
 import com.iqbal.journal.domain.model.Outcome
 import com.iqbal.journal.domain.model.Profile
 import com.iqbal.journal.testing.FakeGroupRepository
+import com.iqbal.journal.testing.FakeNoteRepository
 import com.iqbal.journal.testing.FakeProfileRepository
 import com.iqbal.journal.testing.MainDispatcherRule
 import com.iqbal.journal.ui.home.HomeViewModel
@@ -145,24 +146,46 @@ class HomeViewModelTest {
     @get:Rule val mainDispatcherRule = MainDispatcherRule()
 
     private val groups = FakeGroupRepository()
+    private val notes = FakeNoteRepository()
+    private val profiles = FakeProfileRepository().apply { myProfile.value = Profile("me", "Ayah", "a@b.id") }
+
+    private fun viewModel() = HomeViewModel(groups, notes, profiles)
 
     @Test
-    fun `memilih grup mengubah grup yang tampil`() = runTest {
+    fun `memilih grup mengubah grup dan catatan yang tampil`() = runTest {
         groups.groups.value =
             listOf(FakeGroupRepository.group("g1", "Rumah"), FakeGroupRepository.group("g2", "Kantor"))
-        val viewModel = HomeViewModel(groups)
+        notes.notes.value = listOf(
+            FakeNoteRepository.note(id = "n1", groupId = "g1"),
+            FakeNoteRepository.note(id = "n2", groupId = "g2")
+        )
+        val viewModel = viewModel()
 
         viewModel.uiState.test {
             skipItems(1)
             viewModel.onSelectGroup("g2")
-            assertEquals("Kantor", expectMostRecentItem().selectedGroup?.name)
+            val state = expectMostRecentItem()
+            assertEquals("Kantor", state.selectedGroup?.name)
+            assertEquals(listOf("n2"), state.notes.map { it.id })
+            assertEquals("me", state.myUserId)
         }
     }
 
     @Test
-    fun `gagal refresh menampilkan error jaringan`() = runTest {
-        groups.refreshResult = Outcome.Failure(JournalError.Network)
-        val viewModel = HomeViewModel(groups)
+    fun `catatan grup terpilih diambil ulang dari server`() = runTest {
+        val viewModel = viewModel()
+        groups.selectGroup("g1")
+        groups.selectGroup("g2")
+
+        assertEquals(listOf("g1", "g2"), notes.refreshCalls)
+        viewModel.uiState.test { expectMostRecentItem() }
+    }
+
+    @Test
+    fun `gagal refresh catatan menampilkan error jaringan`() = runTest {
+        notes.refreshResult = Outcome.Failure(JournalError.Network)
+        groups.selectGroup("g1")
+        val viewModel = viewModel()
 
         viewModel.uiState.test {
             assertEquals(JournalError.Network, expectMostRecentItem().error)
