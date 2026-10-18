@@ -109,6 +109,11 @@ private fun NoteWidgetContent(state: NoteWidgetState, appWidgetId: Int) {
             pickNote,
             showDeleteIcon = true
         )
+
+        NoteWidgetState.NoNotesYet -> Message(
+            text = context.getString(R.string.widget_no_notes_yet),
+            onClick = actionStartActivity(Intent(context, MainActivity::class.java))
+        )
     }
 }
 

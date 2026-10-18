@@ -69,13 +69,16 @@ data class PendingOpEntity(
     @ColumnInfo(name = "group_id") val groupId: String,
     val type: PendingOpType,
     /** Isi catatan untuk Create/Update; null untuk Delete. */
-    val content: String?
+    val content: String?,
+    /** Kunci warna untuk Create/Update; null = warna bawaan. */
+    @ColumnInfo(defaultValue = "NULL") val color: String? = null
 )
 
 /** Pilihan catatan per widget. Catatan di sini tidak ikut dibuang oleh batas cache per grup. */
 @Entity(tableName = "widget_selections")
 data class WidgetSelectionEntity(
     @PrimaryKey @ColumnInfo(name = "app_widget_id") val appWidgetId: Int,
-    @ColumnInfo(name = "note_id") val noteId: String,
+    /** Null = ikuti catatan terbaru di grup. */
+    @ColumnInfo(name = "note_id") val noteId: String?,
     @ColumnInfo(name = "group_id") val groupId: String
 )

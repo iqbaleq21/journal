@@ -58,7 +58,8 @@ data class NewNoteDto(
     val id: String,
     @SerialName("group_id") val groupId: String,
     @SerialName("author_id") val authorId: String,
-    val content: String
+    val content: String,
+    val color: String?
 )
 
 /** Hanya kolom id; isi `old_record` Realtime untuk hard delete (replica identity default). */

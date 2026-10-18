@@ -66,6 +66,7 @@ fun EditorRoute(onDone: () -> Unit, onBack: () -> Unit, viewModel: EditorViewMod
         state = state,
         onBack = onBack,
         onContentChange = viewModel::onContentChange,
+        onColorChange = viewModel::onColorChange,
         onSave = viewModel::onSave,
         onDeleteClick = viewModel::onDeleteClick,
         onDeleteDismiss = viewModel::onDeleteDismiss,
@@ -79,6 +80,7 @@ fun EditorScreen(
     state: EditorUiState,
     onBack: () -> Unit,
     onContentChange: (String) -> Unit,
+    onColorChange: (NoteColor) -> Unit,
     onSave: () -> Unit,
     onDeleteClick: () -> Unit,
     onDeleteDismiss: () -> Unit,
@@ -105,6 +107,7 @@ fun EditorScreen(
         ) {
             TopBar(state = state, onBack = onBack, onSave = onSave)
             NoteEditorCard(state = state, onContentChange = onContentChange, modifier = Modifier.weight(1f))
+            if (state.canEdit) NoteColorPicker(selected = state.color, onSelect = onColorChange)
             if (!state.isMine) {
                 Text(
                     stringResource(R.string.editor_read_only),
@@ -306,6 +309,7 @@ private fun EditorScreenPreview() {
             ),
             onBack = {},
             onContentChange = {},
+            onColorChange = {},
             onSave = {},
             onDeleteClick = {},
             onDeleteDismiss = {},

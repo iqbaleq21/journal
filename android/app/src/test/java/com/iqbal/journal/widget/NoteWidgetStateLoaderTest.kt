@@ -46,6 +46,18 @@ class NoteWidgetStateLoaderTest {
     }
 
     @Test
+    fun `mode terbaru mengikuti catatan yang terakhir diubah di grup`() = runTest {
+        widgets.select(WidgetSelection(appWidgetId = WIDGET_ID, noteId = null, groupId = "g1"))
+        loader.observe(WIDGET_ID).test {
+            assertEquals(NoteWidgetState.NoNotesYet, awaitItem())
+            notes.notes.value = listOf(FakeNoteRepository.note(id = "baru"), FakeNoteRepository.note(id = "lama"))
+            assertEquals("baru", (awaitItem() as NoteWidgetState.Showing).note.id)
+            notes.notes.value = listOf(FakeNoteRepository.note(id = "lama"))
+            assertEquals("lama", (awaitItem() as NoteWidgetState.Showing).note.id)
+        }
+    }
+
+    @Test
     fun `profil belum diisi didahulukan dari state lain`() = runTest {
         profiles.myProfile.value = null
         pin()

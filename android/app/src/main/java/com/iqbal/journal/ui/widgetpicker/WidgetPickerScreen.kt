@@ -74,6 +74,7 @@ fun WidgetPickerRoute(
         onOpenApp = onOpenApp,
         onSelectGroup = viewModel::onSelectGroup,
         onSelectNote = viewModel::onSelectNote,
+        onSelectLatest = viewModel::onSelectLatest,
         onSave = viewModel::onSave
     )
 }
@@ -85,6 +86,7 @@ fun WidgetPickerScreen(
     onOpenApp: () -> Unit,
     onSelectGroup: (String) -> Unit,
     onSelectNote: (String) -> Unit,
+    onSelectLatest: () -> Unit,
     onSave: () -> Unit
 ) {
     Scaffold { innerPadding ->
@@ -111,7 +113,7 @@ fun WidgetPickerScreen(
 
                 else -> {
                     WidgetPreview(
-                        note = state.selectedNote,
+                        note = state.previewNote,
                         groupName = state.selectedGroup?.name.orEmpty(),
                         myUserId = state.myUserId
                     )
@@ -119,8 +121,10 @@ fun WidgetPickerScreen(
                     NoteList(
                         notes = state.notes,
                         selectedNoteId = state.selectedNoteId,
+                        followsLatest = state.followsLatest,
                         myUserId = state.myUserId,
                         onSelect = onSelectNote,
+                        onSelectLatest = onSelectLatest,
                         modifier = Modifier.weight(1f)
                     )
                     SaveButton(state = state, onSave = onSave)
@@ -192,8 +196,10 @@ private fun GroupChips(groups: List<Group>, selectedGroupId: String?, onSelect: 
 private fun NoteList(
     notes: List<Note>,
     selectedNoteId: String?,
+    followsLatest: Boolean,
     myUserId: String?,
     onSelect: (String) -> Unit,
+    onSelectLatest: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -201,30 +207,73 @@ private fun NoteList(
         color = MaterialTheme.colorScheme.surface,
         modifier = modifier.fillMaxWidth()
     ) {
-        if (notes.isEmpty()) {
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(Spacing.large)) {
-                Text(
-                    stringResource(R.string.widget_picker_empty),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
+        LazyColumn(contentPadding = PaddingValues(Spacing.small), modifier = Modifier.selectableGroup()) {
+            item(key = "latest") {
+                ChoiceRow(
+                    isSelected = followsLatest,
+                    onClick = onSelectLatest,
+                    title = stringResource(R.string.widget_picker_latest),
+                    subtitle = stringResource(R.string.widget_picker_latest_body),
+                    leading = {
+                        Icon(
+                            painterResource(R.drawable.ic_swap),
+                            contentDescription = null,
+                            Modifier.size(ColorSwatchSize)
+                        )
+                    }
                 )
             }
-            return@Surface
-        }
-        LazyColumn(contentPadding = PaddingValues(Spacing.small), modifier = Modifier.selectableGroup()) {
+            if (notes.isEmpty()) {
+                item(key = "empty") {
+                    Text(
+                        stringResource(R.string.widget_picker_empty),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(Spacing.large)
+                    )
+                }
+            }
             items(notes, key = { it.id }) { note ->
-                NoteRow(note = note, isSelected = note.id == selectedNoteId, myUserId = myUserId, onClick = {
-                    onSelect(note.id)
-                })
+                val swatch = JournalTheme.noteColors.swatchFor(note.color)
+                ChoiceRow(
+                    isSelected = !followsLatest && note.id == selectedNoteId,
+                    onClick = { onSelect(note.id) },
+                    title = note.content,
+                    subtitle = stringResource(
+                        R.string.widget_meta,
+                        authorLabel(note, myUserId),
+                        relativeTimeText(note.updatedAt)
+                    ),
+                    leading = {
+                        Surface(
+                            shape = MaterialTheme.shapes.extraSmall,
+                            color = swatch.container,
+                            border = if (note.color == NoteColor.Plain) {
+                                BorderStroke(Sizes.outlineThin, MaterialTheme.colorScheme.outline)
+                            } else {
+                                null
+                            },
+                            modifier = Modifier.size(ColorSwatchSize)
+                        ) {}
+                    }
+                )
             }
         }
     }
 }
 
+/** Satu pilihan berbentuk radio; seluruh baris bisa diketuk agar target sentuhnya lebar. */
 @Composable
-private fun NoteRow(note: Note, isSelected: Boolean, myUserId: String?, onClick: () -> Unit) {
-    val swatch = JournalTheme.noteColors.swatchFor(note.color)
+private fun ChoiceRow(
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    title: String,
+    subtitle: String,
+    leading: @Composable () -> Unit
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap),
@@ -237,32 +286,15 @@ private fun NoteRow(note: Note, isSelected: Boolean, myUserId: String?, onClick:
             .selectable(selected = isSelected, onClick = onClick, role = Role.RadioButton)
             .padding(horizontal = Spacing.medium, vertical = Spacing.cardGap)
     ) {
-        Surface(
-            shape = MaterialTheme.shapes.extraSmall,
-            color = swatch.container,
-            border = if (note.color ==
-                NoteColor.Plain
-            ) {
-                BorderStroke(Sizes.outlineThin, MaterialTheme.colorScheme.outline)
-            } else {
-                null
-            },
-            modifier = Modifier.size(ColorSwatchSize)
-        ) {}
+        leading()
         Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
-                note.content,
-                style = MaterialTheme.typography.titleSmall,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                stringResource(R.string.widget_meta, authorLabel(note, myUserId), relativeTimeText(note.updatedAt)),
+                subtitle,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        // Klik ditangani baris agar target sentuh selebar baris.
         RadioButton(selected = isSelected, onClick = null)
     }
 }
@@ -354,6 +386,7 @@ private fun WidgetPickerScreenPreview() {
             onOpenApp = {},
             onSelectGroup = {},
             onSelectNote = {},
+            onSelectLatest = {},
             onSave = {}
         )
     }

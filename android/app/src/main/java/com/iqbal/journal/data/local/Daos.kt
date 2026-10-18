@@ -104,7 +104,11 @@ interface NoteDao {
     )
     fun observeVersion(): Flow<String>
 
-    /** Samakan catatan sebuah grup dengan hasil terbaru dari server; catatan yang dipakai widget dipertahankan. */
+    /**
+     * Samakan catatan sebuah grup dengan hasil terbaru dari server; catatan yang dipakai widget dipertahankan.
+     * Subquery widget_selections selalu menyaring NULL: `x NOT IN (..., NULL)` bernilai NULL,
+     * sehingga tanpa saringan itu tidak ada yang terhapus.
+     */
     @Transaction
     suspend fun replaceForGroup(groupId: String, notes: List<NoteEntity>) {
         deleteFromGroupExcept(groupId, notes.map { it.id })
@@ -123,7 +127,7 @@ interface NoteDao {
     // Hitungan berkorelasi, bukan window function: SQLite di Android 8 belum mendukungnya.
     @Query(
         """
-        DELETE FROM notes WHERE id NOT IN (SELECT note_id FROM widget_selections)
+        DELETE FROM notes WHERE id NOT IN (SELECT note_id FROM widget_selections WHERE note_id IS NOT NULL)
         AND id NOT IN (SELECT note_id FROM pending_ops)
         AND (SELECT COUNT(*) FROM notes newer
              WHERE newer.group_id = notes.group_id AND newer.updated_at > notes.updated_at) >= :limitPerGroup
@@ -134,7 +138,7 @@ interface NoteDao {
     @Query(
         """
         DELETE FROM notes WHERE group_id = :groupId AND id NOT IN (:keepIds)
-        AND id NOT IN (SELECT note_id FROM widget_selections)
+        AND id NOT IN (SELECT note_id FROM widget_selections WHERE note_id IS NOT NULL)
         AND id NOT IN (SELECT note_id FROM pending_ops)
         """
     )
@@ -143,10 +147,11 @@ interface NoteDao {
 
 @Dao
 interface WidgetSelectionDao {
-    @Query("SELECT DISTINCT note_id FROM widget_selections")
+    // Widget mode "terbaru" (note_id NULL) tidak menahan catatan tertentu.
+    @Query("SELECT DISTINCT note_id FROM widget_selections WHERE note_id IS NOT NULL")
     fun observePinnedNoteIds(): Flow<List<String>>
 
-    @Query("SELECT note_id FROM widget_selections WHERE group_id = :groupId")
+    @Query("SELECT note_id FROM widget_selections WHERE group_id = :groupId AND note_id IS NOT NULL")
     suspend fun pinnedNoteIds(groupId: String): List<String>
 
     @Query("SELECT * FROM widget_selections WHERE app_widget_id = :appWidgetId")

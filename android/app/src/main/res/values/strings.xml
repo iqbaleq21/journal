@@ -62,6 +62,13 @@
 
     <!-- Editor -->
     <string name="editor_save">Simpan</string>
+    <string name="editor_color">Warna</string>
+    <string name="color_butter">Kuning</string>
+    <string name="color_mint">Hijau</string>
+    <string name="color_sky">Biru</string>
+    <string name="color_peach">Persik</string>
+    <string name="color_lilac">Ungu</string>
+    <string name="color_plain">Putih</string>
     <string name="editor_label">CATATAN</string>
     <string name="editor_placeholder">Tulis sesuatu untuk grupmu…</string>
     <string name="editor_new">Catatan baru</string>
@@ -130,6 +137,9 @@
     <string name="widget_left_group">Kamu tidak lagi di grup ini. Ketuk untuk memilih catatan lain.</string>
     <string name="widget_note_deleted">Catatan ini sudah dihapus. Ketuk untuk memilih yang lain.</string>
     <string name="widget_change">Ganti catatan</string>
+    <string name="widget_no_notes_yet">Belum ada catatan di grup ini. Ketuk untuk menulis.</string>
+    <string name="widget_picker_latest">Catatan terbaru</string>
+    <string name="widget_picker_latest_body">Otomatis berganti saat ada catatan baru atau yang diubah</string>
     <string name="widget_badge">Di widget</string>
     <string name="widget_picker_title">Pilih catatan untuk widget</string>
     <string name="widget_picker_close">Tutup</string>

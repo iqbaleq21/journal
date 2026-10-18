@@ -36,13 +36,18 @@ data class WidgetPickerUiState(
     val selectedGroupId: String? = null,
     val notes: List<Note> = emptyList(),
     val selectedNoteId: String? = null,
+    /** US-16: widget mengikuti catatan terbaru grup, bukan catatan tertentu. */
+    val followsLatest: Boolean = false,
     val myUserId: String? = null,
     val isSaving: Boolean = false,
     val isDone: Boolean = false
 ) {
     val selectedGroup: Group? get() = groups.firstOrNull { it.id == selectedGroupId }
     val selectedNote: Note? get() = notes.firstOrNull { it.id == selectedNoteId }
-    val canSave: Boolean get() = selectedNote != null && !isSaving
+
+    /** Catatan yang akan tampil di widget saat ini, untuk preview. */
+    val previewNote: Note? get() = if (followsLatest) notes.firstOrNull() else selectedNote
+    val canSave: Boolean get() = !isSaving && (if (followsLatest) selectedGroup != null else selectedNote != null)
 }
 
 /** State yang dipilih di layar ini, belum disimpan. */
@@ -51,6 +56,7 @@ private data class PickerLocalState(
     val isReconfiguring: Boolean = false,
     val groupId: String? = null,
     val noteId: String? = null,
+    val followsLatest: Boolean = false,
     val isSaving: Boolean = false,
     val isDone: Boolean = false
 )
@@ -96,6 +102,7 @@ class WidgetPickerViewModel @Inject constructor(
             selectedGroupId = groupId,
             notes = notes,
             selectedNoteId = state.noteId,
+            followsLatest = state.followsLatest,
             myUserId = profile?.id,
             isSaving = state.isSaving,
             isDone = state.isDone
@@ -112,7 +119,8 @@ class WidgetPickerViewModel @Inject constructor(
                     isLoading = false,
                     isReconfiguring = existing != null,
                     groupId = groupId,
-                    noteId = existing?.noteId
+                    noteId = existing?.noteId,
+                    followsLatest = existing?.followsLatest == true
                 )
             }
         }
@@ -122,16 +130,18 @@ class WidgetPickerViewModel @Inject constructor(
         if (groupId == uiState.value.selectedGroupId) it else it.copy(groupId = groupId, noteId = null)
     }
 
-    fun onSelectNote(noteId: String) = local.update { it.copy(noteId = noteId) }
+    fun onSelectNote(noteId: String) = local.update { it.copy(noteId = noteId, followsLatest = false) }
+
+    fun onSelectLatest() = local.update { it.copy(noteId = null, followsLatest = true) }
 
     fun onSave() {
-        val note = uiState.value.selectedNote ?: return
-        if (local.value.isSaving) return
+        val state = uiState.value
+        if (!state.canSave) return
+        val groupId = state.selectedGroupId ?: return
         local.update { it.copy(isSaving = true) }
         viewModelScope.launch {
-            widgetRepository.select(
-                WidgetSelection(appWidgetId = appWidgetId, noteId = note.id, groupId = note.groupId)
-            )
+            val noteId = if (state.followsLatest) null else state.selectedNote?.id
+            widgetRepository.select(WidgetSelection(appWidgetId = appWidgetId, noteId = noteId, groupId = groupId))
             local.update { it.copy(isSaving = false, isDone = true) }
         }
     }

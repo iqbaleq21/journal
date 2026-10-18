@@ -41,6 +41,9 @@ internal fun WidgetSelection.toEntity() =
 
 internal fun AuthorDto.toEntity() = AuthorEntity(id = id, displayName = displayName)
 
+/** Kunci kolom `notes.color`; warna bawaan disimpan sebagai null. */
+internal fun NoteColor.toKey(): String? = if (this == NoteColor.Plain) null else name.lowercase()
+
 /** Kunci di database berupa huruf kecil (`butter`); kunci tak dikenal jatuh ke warna bawaan. */
 private fun noteColorOf(key: String?): NoteColor =
     NoteColor.entries.firstOrNull { it.name.equals(key, ignoreCase = true) } ?: NoteColor.Plain

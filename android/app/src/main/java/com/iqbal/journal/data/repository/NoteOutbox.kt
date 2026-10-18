@@ -68,9 +68,9 @@ class NoteOutbox @Inject constructor(
 
     private suspend fun send(op: PendingOpEntity) {
         val saved: NoteDto? = when (op.type) {
-            PendingOpType.Create -> remote.insert(op.noteId, op.groupId, checkNotNull(op.content))
+            PendingOpType.Create -> remote.insert(op.noteId, op.groupId, checkNotNull(op.content), op.color)
 
-            PendingOpType.Update -> remote.updateContent(op.noteId, checkNotNull(op.content))
+            PendingOpType.Update -> remote.updateContent(op.noteId, checkNotNull(op.content), op.color)
 
             PendingOpType.Delete -> {
                 remote.softDelete(op.noteId, clock.instant())

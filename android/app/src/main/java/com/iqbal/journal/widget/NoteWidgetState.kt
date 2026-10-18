@@ -20,6 +20,9 @@ sealed interface NoteWidgetState {
     data object NotConfigured : NoteWidgetState
     data object LeftGroup : NoteWidgetState
     data object NoteDeleted : NoteWidgetState
+
+    /** Mode "catatan terbaru" untuk grup yang belum punya catatan. */
+    data object NoNotesYet : NoteWidgetState
     data class Showing(val note: Note, val groupName: String, val isMine: Boolean) : NoteWidgetState
 }
 
@@ -47,11 +50,22 @@ class NoteWidgetStateLoader @Inject constructor(
 
             group == null -> flowOf(NoteWidgetState.LeftGroup)
 
-            else -> noteRepository.note(selection.noteId).map { note ->
-                if (note == null) {
-                    NoteWidgetState.NoteDeleted
-                } else {
-                    NoteWidgetState.Showing(note = note, groupName = group.name, isMine = note.authorId == profile.id)
+            else -> {
+                // US-16: tanpa catatan pilihan, widget mengikuti catatan yang terakhir diubah di grup.
+                val noteFlow = selection.noteId?.let(noteRepository::note)
+                    ?: noteRepository.notes(group.id).map { it.firstOrNull() }
+                noteFlow.map { note ->
+                    when {
+                        note != null -> NoteWidgetState.Showing(
+                            note = note,
+                            groupName = group.name,
+                            isMine = note.authorId == profile.id
+                        )
+
+                        selection.followsLatest -> NoteWidgetState.NoNotesYet
+
+                        else -> NoteWidgetState.NoteDeleted
+                    }
                 }
             }
         }

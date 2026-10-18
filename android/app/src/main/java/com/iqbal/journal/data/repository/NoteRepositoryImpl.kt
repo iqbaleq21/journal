@@ -11,7 +11,9 @@ import com.iqbal.journal.data.remote.NoteRemoteDataSource
 import com.iqbal.journal.data.remote.outcomeOf
 import com.iqbal.journal.data.toDomain
 import com.iqbal.journal.data.toEntity
+import com.iqbal.journal.data.toKey
 import com.iqbal.journal.domain.model.Note
+import com.iqbal.journal.domain.model.NoteColor
 import com.iqbal.journal.domain.model.Outcome
 import com.iqbal.journal.domain.repository.NoteRepository
 import com.iqbal.journal.domain.validation.NoteRules
@@ -61,24 +63,28 @@ class NoteRepositoryImpl @Inject constructor(
     override suspend fun flushPending(): Boolean = outbox.flush()
 
     // Tulis/edit/hapus langsung ke cache (tampil di UI & widget), lalu dikirim lewat antrean; tetap jalan saat offline.
-    override suspend fun create(groupId: String, content: String): Outcome<Note> = outcomeOf {
+    override suspend fun create(groupId: String, content: String, color: NoteColor): Outcome<Note> = outcomeOf {
         val now = clock.millis()
         val note = NoteEntity(
             id = UUID.randomUUID().toString(),
             groupId = groupId,
             authorId = remote.currentUserId(),
             content = NoteRules.normalizeContent(content),
-            color = null,
+            color = color.toKey(),
             createdAtEpochMillis = now,
             updatedAtEpochMillis = now
         )
         saveLocally(note, PendingOpType.Create)
     }
 
-    override suspend fun update(noteId: String, content: String): Outcome<Note> = outcomeOf {
+    override suspend fun update(noteId: String, content: String, color: NoteColor): Outcome<Note> = outcomeOf {
         val current = checkNotNull(noteDao.observeById(noteId).first()) { "Catatan $noteId tidak ada" }.note
         saveLocally(
-            current.copy(content = NoteRules.normalizeContent(content), updatedAtEpochMillis = clock.millis()),
+            current.copy(
+                content = NoteRules.normalizeContent(content),
+                color = color.toKey(),
+                updatedAtEpochMillis = clock.millis()
+            ),
             PendingOpType.Update
         )
     }
@@ -125,7 +131,15 @@ class NoteRepositoryImpl @Inject constructor(
 
     private suspend fun saveLocally(note: NoteEntity, type: PendingOpType): Note {
         noteDao.upsert(note)
-        outbox.enqueue(PendingOpEntity(noteId = note.id, groupId = note.groupId, type = type, content = note.content))
+        outbox.enqueue(
+            PendingOpEntity(
+                noteId = note.id,
+                groupId = note.groupId,
+                type = type,
+                content = note.content,
+                color = note.color
+            )
+        )
         outbox.flush()
         return checkNotNull(noteDao.observeById(note.id).first()) { "Catatan ${note.id} tidak tersimpan" }.toDomain()
     }

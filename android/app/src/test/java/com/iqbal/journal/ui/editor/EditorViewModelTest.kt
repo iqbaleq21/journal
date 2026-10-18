@@ -2,6 +2,7 @@ package com.iqbal.journal.ui.editor
 
 import androidx.lifecycle.SavedStateHandle
 import com.iqbal.journal.domain.model.JournalError
+import com.iqbal.journal.domain.model.NoteColor
 import com.iqbal.journal.domain.model.Outcome
 import com.iqbal.journal.domain.model.Profile
 import com.iqbal.journal.domain.validation.NoteRules
@@ -40,6 +41,28 @@ class EditorViewModelTest {
 
         assertEquals(listOf("g1" to "Galon habis"), notes.createCalls)
         assertTrue(viewModel.uiState.value.isDone)
+    }
+
+    @Test
+    fun `warna yang dipilih ikut disimpan, dan ganti warna saja tetap dianggap perubahan`() {
+        notes.notes.value = listOf(FakeNoteRepository.note(id = "n1"))
+        val viewModel = viewModel(noteId = "n1")
+
+        viewModel.onColorChange(NoteColor.Peach)
+        viewModel.onSave()
+
+        assertEquals(listOf("n1" to "Galon habis"), notes.updateCalls)
+        assertEquals(NoteColor.Peach, notes.lastColor)
+    }
+
+    @Test
+    fun `catatan orang lain tidak bisa diganti warnanya`() {
+        notes.notes.value = listOf(FakeNoteRepository.note(id = "n1", authorId = "ibu"))
+        val viewModel = viewModel(noteId = "n1")
+
+        viewModel.onColorChange(NoteColor.Peach)
+
+        assertEquals(NoteColor.Plain, viewModel.uiState.value.color)
     }
 
     @Test

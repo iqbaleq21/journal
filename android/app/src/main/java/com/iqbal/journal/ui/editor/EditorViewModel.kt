@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iqbal.journal.domain.model.JournalError
+import com.iqbal.journal.domain.model.Note
 import com.iqbal.journal.domain.model.NoteColor
 import com.iqbal.journal.domain.model.Outcome
 import com.iqbal.journal.domain.repository.GroupRepository
@@ -59,8 +60,8 @@ class EditorViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(EditorUiState(isNew = noteId == null, isLoading = noteId != null))
     val uiState: StateFlow<EditorUiState> = _uiState.asStateFlow()
 
-    /** Isi terakhir dari server, untuk melewati simpan bila tidak ada perubahan. */
-    private var savedContent: String? = null
+    /** Versi tersimpan terakhir, untuk melewati simpan bila tidak ada perubahan. */
+    private var saved: Note? = null
 
     init {
         viewModelScope.launch {
@@ -78,17 +79,17 @@ class EditorViewModel @Inject constructor(
             combine(noteRepository.note(noteId), profileRepository.myProfile, ::Pair).collect { (note, me) ->
                 if (note == null) {
                     // Dihapus di HP lain saat sedang dibuka.
-                    if (savedContent != null) _uiState.update { it.copy(isDone = true) }
+                    if (saved != null) _uiState.update { it.copy(isDone = true) }
                     return@collect
                 }
                 val isMine = note.authorId == me?.id
-                // Isi milik sendiri tidak ditimpa agar ketikan yang belum disimpan tidak hilang.
-                val keepTyped = isMine && savedContent != null
-                savedContent = note.content
+                // Isi & warna milik sendiri tidak ditimpa agar pilihan yang belum disimpan tidak hilang.
+                val keepTyped = isMine && saved != null
+                saved = note
                 _uiState.update {
                     it.copy(
                         content = if (keepTyped) it.content else note.content,
-                        color = note.color,
+                        color = if (keepTyped) it.color else note.color,
                         isLoading = false,
                         isMine = isMine,
                         authorName = note.authorName,
@@ -103,15 +104,17 @@ class EditorViewModel @Inject constructor(
         if (it.canEdit) it.copy(content = content.take(NoteRules.MAX_NOTE_LENGTH), showEmptyError = false) else it
     }
 
+    fun onColorChange(color: NoteColor) = _uiState.update { if (it.canEdit) it.copy(color = color) else it }
+
     fun onSave() {
         val state = _uiState.value
         if (state.isBusy || !state.canEdit) return
         val content = NoteRules.normalizeContent(state.content)
         when {
             !NoteRules.isValidContent(content) -> _uiState.update { it.copy(showEmptyError = true) }
-            noteId == null -> run(EditorAction.Save) { noteRepository.create(groupId, content) }
-            content == savedContent -> _uiState.update { it.copy(isDone = true) }
-            else -> run(EditorAction.Save) { noteRepository.update(noteId, content) }
+            noteId == null -> run(EditorAction.Save) { noteRepository.create(groupId, content, state.color) }
+            content == saved?.content && state.color == saved?.color -> _uiState.update { it.copy(isDone = true) }
+            else -> run(EditorAction.Save) { noteRepository.update(noteId, content, state.color) }
         }
     }
 

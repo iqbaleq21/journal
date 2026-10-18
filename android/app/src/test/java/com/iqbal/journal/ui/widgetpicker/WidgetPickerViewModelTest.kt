@@ -84,6 +84,32 @@ class WidgetPickerViewModelTest {
         }
     }
 
+    @Test
+    fun `memilih catatan terbaru menyimpan widget tanpa catatan tertentu`() = runTest {
+        val viewModel = viewModel()
+        viewModel.uiState.test {
+            viewModel.onSelectLatest()
+            val state = expectMostRecentItem()
+            assertTrue(state.canSave)
+            assertEquals("n1", state.previewNote?.id)
+
+            viewModel.onSave()
+            assertTrue(expectMostRecentItem().isDone)
+        }
+
+        assertEquals(WidgetSelection(WIDGET_ID, noteId = null, groupId = "g1"), widgets.selection(WIDGET_ID))
+    }
+
+    @Test
+    fun `atur ulang widget mode terbaru membuka pilihan terbaru`() = runTest {
+        widgets.select(WidgetSelection(WIDGET_ID, noteId = null, groupId = "g2"))
+        viewModel().uiState.test {
+            val state = expectMostRecentItem()
+            assertTrue(state.followsLatest)
+            assertEquals("g2", state.selectedGroupId)
+        }
+    }
+
     private companion object {
         const val WIDGET_ID = 42
     }

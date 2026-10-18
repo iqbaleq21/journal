@@ -46,14 +46,14 @@ class NoteOutboxTest {
         updatedAt = "2026-10-18T05:00:01+00:00"
     )
 
-    private fun op(id: Long, noteId: String, type: PendingOpType, content: String? = "isi") =
-        PendingOpEntity(id = id, noteId = noteId, groupId = "g1", type = type, content = content)
+    private fun op(id: Long, noteId: String, type: PendingOpType, content: String? = "isi", color: String? = null) =
+        PendingOpEntity(id = id, noteId = noteId, groupId = "g1", type = type, content = content, color = color)
 
     @Test
     fun `antrean dikirim berurutan dan versi server disimpan setelah operasi terakhir`() = runTest {
-        queue += listOf(op(1, "n1", PendingOpType.Create, "awal"), op(2, "n1", PendingOpType.Update, "akhir"))
-        coEvery { remote.insert("n1", "g1", "awal") } returns dto("n1", "awal")
-        coEvery { remote.updateContent("n1", "akhir") } returns dto("n1", "akhir")
+        queue += listOf(op(1, "n1", PendingOpType.Create, "awal", "mint"), op(2, "n1", PendingOpType.Update, "akhir"))
+        coEvery { remote.insert("n1", "g1", "awal", "mint") } returns dto("n1", "awal")
+        coEvery { remote.updateContent("n1", "akhir", null) } returns dto("n1", "akhir")
 
         assertTrue(outbox.flush())
 
@@ -66,7 +66,7 @@ class NoteOutboxTest {
     @Test
     fun `gagal jaringan menghentikan pengiriman dan menjadwalkan ulang tanpa membuang antrean`() = runTest {
         queue += listOf(op(1, "n1", PendingOpType.Create), op(2, "n2", PendingOpType.Delete, null))
-        coEvery { remote.insert(any(), any(), any()) } throws IOException("offline")
+        coEvery { remote.insert(any(), any(), any(), any()) } throws IOException("offline")
 
         assertFalse(outbox.flush())
 
@@ -78,7 +78,7 @@ class NoteOutboxTest {
     @Test
     fun `ditolak server dibuang lalu cache memakai versi server`() = runTest {
         queue += op(1, "n1", PendingOpType.Update, "ditolak")
-        coEvery { remote.updateContent("n1", "ditolak") } throws mockk<RestException>(relaxed = true)
+        coEvery { remote.updateContent("n1", "ditolak", null) } throws mockk<RestException>(relaxed = true)
         coEvery { remote.fetchByIds(listOf("n1")) } returns listOf(dto("n1", "versi server"))
 
         assertTrue(outbox.flush())

@@ -54,12 +54,20 @@ class NoteRemoteDataSource @Inject constructor(private val client: SupabaseClien
         .select { filter { isIn("id", noteIds.toList()) } }
         .decodeList()
 
-    suspend fun insert(noteId: String, groupId: String, content: String): NoteDto = client.from(Tables.NOTES)
-        .insert(NewNoteDto(id = noteId, groupId = groupId, authorId = currentUserId(), content = content)) { select() }
+    suspend fun insert(noteId: String, groupId: String, content: String, color: String?): NoteDto = client
+        .from(Tables.NOTES)
+        .insert(
+            NewNoteDto(id = noteId, groupId = groupId, authorId = currentUserId(), content = content, color = color)
+        ) {
+            select()
+        }
         .decodeSingle()
 
-    suspend fun updateContent(noteId: String, content: String): NoteDto = client.from(Tables.NOTES)
-        .update({ set("content", content) }) {
+    suspend fun updateContent(noteId: String, content: String, color: String?): NoteDto = client.from(Tables.NOTES)
+        .update({
+            set("content", content)
+            set("color", color)
+        }) {
             select()
             filter { eq("id", noteId) }
         }

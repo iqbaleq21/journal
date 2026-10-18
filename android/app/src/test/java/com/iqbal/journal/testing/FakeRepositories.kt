@@ -137,14 +137,19 @@ class FakeNoteRepository : NoteRepository {
 
     override suspend fun flushPending(): Boolean = true
 
-    override suspend fun create(groupId: String, content: String): Outcome<Note> {
+    /** Warna yang dikirim pada create/update terakhir. */
+    var lastColor: NoteColor? = null
+
+    override suspend fun create(groupId: String, content: String, color: NoteColor): Outcome<Note> {
         createCalls += groupId to content
+        lastColor = color
         writeFailure?.let { return it }
         return Outcome.Success(note(id = "new", groupId = groupId, content = content))
     }
 
-    override suspend fun update(noteId: String, content: String): Outcome<Note> {
+    override suspend fun update(noteId: String, content: String, color: NoteColor): Outcome<Note> {
         updateCalls += noteId to content
+        lastColor = color
         writeFailure?.let { return it }
         return Outcome.Success(note(id = noteId, content = content))
     }
@@ -179,7 +184,8 @@ class FakeNoteRepository : NoteRepository {
 class FakeWidgetRepository : WidgetRepository {
     val selections = MutableStateFlow<Map<Int, WidgetSelection>>(emptyMap())
 
-    override val pinnedNoteIds: Flow<Set<String>> = selections.map { map -> map.values.map { it.noteId }.toSet() }
+    override val pinnedNoteIds: Flow<Set<String>> =
+        selections.map { map -> map.values.mapNotNull { it.noteId }.toSet() }
 
     override suspend fun selection(appWidgetId: Int): WidgetSelection? = selections.value[appWidgetId]
 
