@@ -37,10 +37,13 @@ Semua perintah Gradle dari folder `android/`, dengan `JAVA_HOME=/usr/lib/jvm/jav
 - Database lokal + tes SQL (dari root repo): `supabase db start` lalu `supabase test db`; matikan dengan `supabase stop`
 - Kirim migrasi ke Supabase cloud: `supabase link --project-ref $SUPABASE_PROJECT_REF` (sekali), lalu `supabase db push` (password dari `.env`)
 
+Emulator (AVD `jadwal`): RAM mesin ini terbatas dan sesi pernah di-kill `systemd-oomd`. Build dulu lalu `./gradlew --stop`, baru jalankan `emulator -avd jadwal -memory 2048 -no-window -no-snapshot-save`; matikan dengan `adb shell sync && adb emu kill` (tanpa `sync`, tulisan SQLite terakhir bisa hilang).
+
 Konfigurasi app (`SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`) dibaca Gradle dari `.env` di root repo.
 
 ## Progres
 Status milestone dicatat di `docs/PRD.md` bagian 10.
 - **M0 (setup) ✅ selesai 2026-10-18**: project Android build bersih (Compose, Hilt, Supabase client, tema dari DESIGN.md); migrasi awal + 16 tes pgTAP lulus di lokal; migrasi sudah di-push ke cloud (project `anwqobtneghvjzfivqsg`, sudah di-link); anonymous sign-in aktif.
 - **M1 (auth & grup) ✅ selesai 2026-10-18**: layar Kenalan (anonymous sign-in + profil), Mulai (buat grup / gabung dengan kode), Beranda dengan chip pemilih grup + lembar undangan; Room (`my_profile`, `groups`) + DataStore untuk grup terpilih. Diuji di emulator AVD `jadwal`: 3 akun bergabung ke satu grup, error kode salah/sudah anggota tampil.
-- Berikutnya: **M2** (catatan: tulis/edit/hapus, Room + Realtime).
+- **M2 (catatan) ✅ selesai 2026-10-18**: Beranda grid masonry + FAB Tulis, Editor (tulis/edit/hapus, read-only untuk catatan orang lain); Room v2 (`notes`, `authors`, AutoMigration 1→2); `ForegroundSync` (ProcessLifecycleOwner) refresh + Realtime selama app terlihat. Diuji di emulator dengan akun kedua lewat REST: tambah/edit/hapus tampil langsung, RLS menolak edit catatan orang lain.
+- Berikutnya: **M3** (widget Glance: pilih catatan, ganti catatan).

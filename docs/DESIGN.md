@@ -73,8 +73,8 @@ Spasi kelipatan 4 dp. Padding layar 20 dp, jarak antar kartu 12 dp.
 |---|---|---|
 | 1 | Kenalan | Ilustrasi tumpukan catatan + bentuk ekspresif, input nama & email, tombol "Mulai" (tanpa login) |
 | 2 | Mulai | Muncul jika belum punya grup: kartu "Buat grup baru" & "Gabung dengan kode" (6 kotak) |
-| 3 | Beranda | Chip pemilih grup, kartu ringkasan grup (tap → detail; sampai layar Detail grup ada di M5, tap membuka lembar kode undangan), grid masonry catatan, badge "Di widget", FAB "Tulis" |
-| 4 | Editor | Kartu catatan besar sesuai warna, counter 0/500, pemilih warna, hapus |
+| 3 | Beranda | Chip pemilih grup, kartu ringkasan grup (tap → detail; sampai layar Detail grup ada di M5, tap membuka lembar kode undangan; tumpukan avatar anggota menyusul bersama Detail grup), grid masonry catatan, badge "Di widget" (M3), FAB "Tulis" |
+| 4 | Editor | Kartu catatan besar sesuai warna, counter 0/500, pemilih warna (US-15, M6), hapus dengan konfirmasi. Catatan orang lain tampil read-only. |
 | 5 | Detail grup | Kode undangan (bagikan / buat ulang), daftar anggota, keluar grup |
 | 6 | Pilih catatan widget | Preview widget di atas, pilih grup → radio catatan, "Pasang widget" |
 | 7 | Widget | Ukuran 4×2 dan 2×2, varian terang/gelap, state "catatan dihapus" |
