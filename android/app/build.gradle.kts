@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -24,6 +26,11 @@ fun requireEnv(key: String): String = repoEnv[key]?.takeIf { it.isNotEmpty() }
     ?: System.getenv(key)
     ?: error("$key belum diisi. Isi di .env (lihat .env.example).")
 
+// Keystore release ada di luar repo (PRD §12); tanpa file ini APK release tetap dibangun tanpa tanda tangan.
+val keystoreProperties = Properties().apply {
+    rootProject.file("keystore.properties").takeIf { it.exists() }?.inputStream()?.use(::load)
+}
+
 android {
     namespace = "com.iqbal.journal"
     compileSdk = 37
@@ -33,7 +40,7 @@ android {
         minSdk = 26
         targetSdk = 37
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -41,8 +48,20 @@ android {
         buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\"${requireEnv("SUPABASE_PUBLISHABLE_KEY")}\"")
     }
 
+    signingConfigs {
+        if (!keystoreProperties.isEmpty()) {
+            create("release") {
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")

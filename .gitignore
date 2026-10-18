@@ -4,6 +4,7 @@ local.properties
 google-services.json
 *.jks
 *.keystore
+keystore.properties
 *service-account*.json
 
 # Android / Gradle
