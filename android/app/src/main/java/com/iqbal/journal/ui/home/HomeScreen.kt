@@ -134,6 +134,7 @@ fun HomeScreen(
                 NotesGrid(
                     notes = state.notes,
                     myUserId = state.myUserId,
+                    widgetNoteIds = state.widgetNoteIds,
                     onNoteClick = { note -> onOpenEditor(note.groupId, note.id) },
                     modifier = Modifier.weight(1f)
                 )

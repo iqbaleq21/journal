@@ -4,9 +4,11 @@ import app.cash.turbine.test
 import com.iqbal.journal.domain.model.JournalError
 import com.iqbal.journal.domain.model.Outcome
 import com.iqbal.journal.domain.model.Profile
+import com.iqbal.journal.domain.model.WidgetSelection
 import com.iqbal.journal.testing.FakeGroupRepository
 import com.iqbal.journal.testing.FakeNoteRepository
 import com.iqbal.journal.testing.FakeProfileRepository
+import com.iqbal.journal.testing.FakeWidgetRepository
 import com.iqbal.journal.testing.MainDispatcherRule
 import com.iqbal.journal.ui.home.HomeViewModel
 import com.iqbal.journal.ui.onboarding.OnboardingViewModel
@@ -149,7 +151,9 @@ class HomeViewModelTest {
     private val notes = FakeNoteRepository()
     private val profiles = FakeProfileRepository().apply { myProfile.value = Profile("me", "Ayah", "a@b.id") }
 
-    private fun viewModel() = HomeViewModel(groups, notes, profiles)
+    private val widgets = FakeWidgetRepository()
+
+    private fun viewModel() = HomeViewModel(groups, notes, profiles, widgets)
 
     @Test
     fun `memilih grup mengubah grup dan catatan yang tampil`() = runTest {
@@ -168,6 +172,16 @@ class HomeViewModelTest {
             assertEquals("Kantor", state.selectedGroup?.name)
             assertEquals(listOf("n2"), state.notes.map { it.id })
             assertEquals("me", state.myUserId)
+        }
+    }
+
+    @Test
+    fun `catatan yang dipakai widget ditandai`() = runTest {
+        widgets.select(WidgetSelection(appWidgetId = 7, noteId = "n1", groupId = "g1"))
+        val viewModel = viewModel()
+
+        viewModel.uiState.test {
+            assertEquals(setOf("n1"), expectMostRecentItem().widgetNoteIds)
         }
     }
 

@@ -10,11 +10,12 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.iqbal.journal.ui.navigation.JournalNavHost
+import com.iqbal.journal.ui.navigation.NoteLink
 import com.iqbal.journal.ui.onboarding.OnboardingRoute
 
 /** Akar UI: Kenalan sampai profil diisi, lalu aplikasi utama. */
 @Composable
-fun JournalApp(viewModel: RootViewModel = hiltViewModel()) {
+fun JournalApp(noteLink: NoteLink?, onNoteLinkHandled: () -> Unit, viewModel: RootViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     when (val current = state) {
         RootUiState.Loading -> Box(
@@ -25,6 +26,10 @@ fun JournalApp(viewModel: RootViewModel = hiltViewModel()) {
 
         RootUiState.NeedsProfile -> OnboardingRoute()
 
-        is RootUiState.Ready -> JournalNavHost(hasGroups = current.hasGroups)
+        is RootUiState.Ready -> JournalNavHost(
+            hasGroups = current.hasGroups,
+            noteLink = noteLink,
+            onNoteLinkHandled = onNoteLinkHandled
+        )
     }
 }

@@ -53,6 +53,7 @@ internal fun NotesHeader() {
 internal fun NotesGrid(
     notes: List<Note>,
     myUserId: String?,
+    widgetNoteIds: Set<String>,
     onNoteClick: (Note) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -72,6 +73,7 @@ internal fun NotesGrid(
             NoteCard(
                 note = note,
                 isMine = note.authorId == myUserId,
+                isOnWidget = note.id in widgetNoteIds,
                 onClick = { onNoteClick(note) },
                 modifier = Modifier.animateItem()
             )

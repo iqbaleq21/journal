@@ -9,12 +9,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -32,10 +34,11 @@ import java.time.Instant
 private const val SHORT_NOTE_MAX_LENGTH = 40
 private const val PREVIEW_MAX_LINES = 8
 private const val AVATAR_ALPHA = 0.12f
+private const val BADGE_ALPHA = 0.09f
 
 /** Kartu catatan di grid Beranda. [isMine] mengganti nama penulis dengan "Kamu". */
 @Composable
-fun NoteCard(note: Note, isMine: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun NoteCard(note: Note, isMine: Boolean, isOnWidget: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val swatch = JournalTheme.noteColors.swatchFor(note.color)
     val author = when {
         isMine -> stringResource(R.string.note_author_you)
@@ -53,6 +56,7 @@ fun NoteCard(note: Note, isMine: Boolean, onClick: () -> Unit, modifier: Modifie
         modifier = modifier
     ) {
         Column(Modifier.padding(Spacing.medium), verticalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
+            if (isOnWidget) WidgetBadge()
             Text(
                 text = note.content,
                 style = if (note.content.length <= SHORT_NOTE_MAX_LENGTH) {
@@ -93,6 +97,20 @@ fun NoteCard(note: Note, isMine: Boolean, onClick: () -> Unit, modifier: Modifie
     }
 }
 
+@Composable
+private fun WidgetBadge() {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.extraSmall),
+        modifier = Modifier
+            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = BADGE_ALPHA), CircleShape)
+            .padding(horizontal = Spacing.small, vertical = Spacing.extraSmall)
+    ) {
+        Icon(painterResource(R.drawable.ic_widget), contentDescription = null, Modifier.size(Sizes.badgeIcon))
+        Text(stringResource(R.string.widget_badge), style = MaterialTheme.typography.labelSmall)
+    }
+}
+
 @Preview
 @Composable
 private fun NoteCardPreview() {
@@ -106,5 +124,5 @@ private fun NoteCardPreview() {
         createdAt = Instant.now(),
         updatedAt = Instant.now()
     )
-    JournalTheme { NoteCard(note = note, isMine = false, onClick = {}) }
+    JournalTheme { NoteCard(note = note, isMine = false, isOnWidget = true, onClick = {}) }
 }

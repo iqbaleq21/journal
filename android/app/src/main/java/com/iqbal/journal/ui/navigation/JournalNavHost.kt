@@ -26,7 +26,12 @@ data class EditorDestination(val groupId: String, val noteId: String? = null)
 
 /** Navigasi aplikasi utama (setelah profil diisi). */
 @Composable
-fun JournalNavHost(hasGroups: Boolean, navController: NavHostController = rememberNavController()) {
+fun JournalNavHost(
+    hasGroups: Boolean,
+    noteLink: NoteLink?,
+    onNoteLinkHandled: () -> Unit,
+    navController: NavHostController = rememberNavController()
+) {
     // Tujuan awal hanya ditentukan sekali; perubahan selanjutnya lewat navigasi.
     val startDestination: Any = remember { if (hasGroups) HomeDestination else StartDestination(canGoBack = false) }
 
@@ -35,6 +40,13 @@ fun JournalNavHost(hasGroups: Boolean, navController: NavHostController = rememb
         val onInitialStart = navController.currentBackStackEntry?.destination?.hasRoute<StartDestination>() == true &&
             navController.previousBackStackEntry == null
         if (hasGroups && onInitialStart) navController.navigateToHome()
+    }
+
+    LaunchedEffect(noteLink) {
+        if (noteLink != null) {
+            navController.navigate(EditorDestination(noteLink.groupId, noteLink.noteId)) { launchSingleTop = true }
+            onNoteLinkHandled()
+        }
     }
 
     NavHost(navController = navController, startDestination = startDestination) {

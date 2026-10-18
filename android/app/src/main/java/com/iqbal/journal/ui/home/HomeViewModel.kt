@@ -9,6 +9,7 @@ import com.iqbal.journal.domain.model.Outcome
 import com.iqbal.journal.domain.repository.GroupRepository
 import com.iqbal.journal.domain.repository.NoteRepository
 import com.iqbal.journal.domain.repository.ProfileRepository
+import com.iqbal.journal.domain.repository.WidgetRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -30,6 +31,7 @@ data class HomeUiState(
     val selectedGroupId: String? = null,
     val notes: List<Note> = emptyList(),
     val myUserId: String? = null,
+    val widgetNoteIds: Set<String> = emptySet(),
     val isInviteSheetOpen: Boolean = false,
     val error: JournalError? = null
 ) {
@@ -46,7 +48,8 @@ private const val STOP_TIMEOUT_MILLIS = 5_000L
 class HomeViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
     private val noteRepository: NoteRepository,
-    profileRepository: ProfileRepository
+    profileRepository: ProfileRepository,
+    widgetRepository: WidgetRepository
 ) : ViewModel() {
 
     private val localState = MutableStateFlow(HomeLocalState())
@@ -59,14 +62,15 @@ class HomeViewModel @Inject constructor(
         groupRepository.groups,
         groupRepository.selectedGroupId,
         selectedNotes,
-        profileRepository.myProfile,
+        combine(profileRepository.myProfile, widgetRepository.pinnedNoteIds, ::Pair),
         localState
-    ) { groups, selectedId, notes, profile, local ->
+    ) { groups, selectedId, notes, (profile, widgetNoteIds), local ->
         HomeUiState(
             groups = groups,
             selectedGroupId = selectedId,
             notes = notes,
             myUserId = profile?.id,
+            widgetNoteIds = widgetNoteIds,
             isInviteSheetOpen = local.isInviteSheetOpen,
             error = local.error
         )

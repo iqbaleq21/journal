@@ -21,6 +21,7 @@ object Sizes {
     val chipHeight = 40.dp
     val avatar = 44.dp
     val avatarSmall = 24.dp
+    val badgeIcon = 13.dp
     val fabHeight = 64.dp
     val iconTile = 52.dp
     val icon = 24.dp

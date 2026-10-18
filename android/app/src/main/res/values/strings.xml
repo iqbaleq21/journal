@@ -87,6 +87,24 @@
         <item quantity="other">Berlaku %d hari lagi</item>
     </plurals>
 
+    <!-- Widget -->
+    <string name="widget_description">Satu catatan pilihan dari grupmu, selalu di layar utama.</string>
+    <string name="widget_meta">%1$s · %2$s</string>
+    <string name="widget_meta_wide">%1$s · %2$s · %3$s</string>
+    <string name="widget_needs_profile">Buka jOURnal untuk mulai.</string>
+    <string name="widget_not_configured">Ketuk untuk memilih catatan.</string>
+    <string name="widget_left_group">Kamu tidak lagi di grup ini. Ketuk untuk memilih catatan lain.</string>
+    <string name="widget_note_deleted">Catatan ini sudah dihapus. Ketuk untuk memilih yang lain.</string>
+    <string name="widget_change">Ganti catatan</string>
+    <string name="widget_badge">Di widget</string>
+    <string name="widget_picker_title">Pilih catatan untuk widget</string>
+    <string name="widget_picker_close">Tutup</string>
+    <string name="widget_picker_add">Pasang widget</string>
+    <string name="widget_picker_change">Ganti catatan</string>
+    <string name="widget_picker_empty">Belum ada catatan di grup ini. Tulis dulu di jOURnal.</string>
+    <string name="widget_picker_preview_empty">Pilih catatan di bawah</string>
+    <string name="widget_picker_open_app">Buka jOURnal</string>
+
     <!-- Error -->
     <string name="error_network">Tidak ada koneksi internet. Coba lagi.</string>
     <string name="error_profile_required">Lengkapi profil dulu.</string>
