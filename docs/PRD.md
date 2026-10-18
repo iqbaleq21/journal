@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Nama** | **jOURnal**: "OUR" ditulis kapital untuk menekankan catatan bersama |
-| **Status** | v0.4, M0–M2 selesai |
+| **Status** | v0.4, M0–M3 selesai |
 | **Tanggal** | 2026-10-18 |
 | **Platform** | Android saja |
 | **Package ID** | `com.iqbal.journal` |
@@ -104,7 +104,7 @@ Aplikasi catatan untuk **sekelompok kecil orang yang saling terhubung** (pasanga
   - Catatan dihapus → "Catatan ini sudah dihapus. Ketuk untuk memilih yang lain."
   - Keluar / dikeluarkan dari grup → "Kamu tidak lagi di grup ini."
   - Profil belum diisi → "Buka jOURnal untuk mulai."
-- Pilihan per widget disimpan lokal: `appWidgetId → note_id` (Glance state / DataStore).
+- Pilihan per widget disimpan lokal di Room (`widget_selections`: `appWidgetId → note_id, group_id`), agar lapisan data tahu catatan mana yang dipakai widget (§5.6).
 - Widget **hanya membaca data lokal** (Room). Widget tidak pernah melakukan request jaringan sendiri.
 
 ### 5.5 Sinkronisasi & Notifikasi
@@ -292,7 +292,7 @@ select cron.schedule('purge-deleted-notes', '0 3 * * *',
 | M0 | Setup | Project Android, Supabase project, Firebase (FCM), migrasi SQL + RLS + RPC | App kosong build, migrasi jalan | ✅ 2026-10-18 |
 | M1 | Auth & Grup | US-1, US-2, US-3, US-10 | 3 akun bisa bergabung ke satu grup | ✅ 2026-10-18 (diuji di emulator: 3 akun di satu grup) |
 | M2 | Catatan | US-4, US-5, US-6, Room + Realtime | Catatan muncul di semua HP anggota saat app terbuka | ✅ 2026-10-18 (Realtime diuji: tambah/edit/hapus dari akun lain tampil < 2 detik). "Muat lebih banyak" (§5.6) belum dibuat. |
-| M3 | Widget | US-7, US-9 | Widget menampilkan catatan pilihan dari Room; bisa diganti | |
+| M3 | Widget | US-7, US-9 | Widget menampilkan catatan pilihan dari Room; bisa diganti | ✅ 2026-10-18 (pasang, Atur ulang, tap membuka catatan, state dihapus; update saat app terbuka). Update saat app tertutup menyusul di M4. |
 | M4 | Push & Sinkron background | US-8, US-11, Edge Function, WorkManager | Widget HP lain update < 10 detik saat app tertutup | |
 | M5 | Polish | US-12, US-13, US-14, state kosong/error, ikon | APK release ditandatangani & dibagikan | |
 | M6 | Nice to have | US-15, US-16 | — | |

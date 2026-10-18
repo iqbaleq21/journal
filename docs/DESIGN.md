@@ -77,7 +77,7 @@ Spasi kelipatan 4 dp. Padding layar 20 dp, jarak antar kartu 12 dp.
 | 4 | Editor | Kartu catatan besar sesuai warna, counter 0/500, pemilih warna (US-15, M6), hapus dengan konfirmasi. Catatan orang lain tampil read-only. |
 | 5 | Detail grup | Kode undangan (bagikan / buat ulang), daftar anggota, keluar grup |
 | 6 | Pilih catatan widget | Preview widget di atas, pilih grup → radio catatan, "Pasang widget" |
-| 7 | Widget | Ukuran 4×2 dan 2×2, varian terang/gelap, state "catatan dihapus" |
+| 7 | Widget | Ukuran 4×2 dan 2×2, varian terang/gelap, state "catatan dihapus". Batasan Glance: font memakai sans-serif sistem (Glance tidak mendukung font dari `res/font`), sudut membulat hanya di Android 12+, dan waktu relatif baru diperbarui saat widget di-render ulang. |
 
 ## Gerak (motion)
 - Gunakan spring dari Material 3 Expressive (`MotionScheme.expressive()`) untuk transisi layar dan FAB.
