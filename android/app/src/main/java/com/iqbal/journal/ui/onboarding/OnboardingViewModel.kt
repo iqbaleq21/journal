@@ -50,7 +50,7 @@ class OnboardingViewModel @Inject constructor(private val profileRepository: Pro
         }
         _uiState.update { it.copy(isSubmitting = true, showValidation = true) }
         viewModelScope.launch {
-            val result = profileRepository.createProfile(state.name, state.email)
+            val result = profileRepository.saveProfile(state.name, state.email)
             _uiState.update {
                 it.copy(isSubmitting = false, error = (result as? Outcome.Failure)?.error)
             }

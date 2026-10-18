@@ -13,9 +13,11 @@ class FullSync @Inject constructor(
 ) {
     /** @return true bila semua langkah berhasil. */
     suspend fun run(): Boolean {
+        // Perubahan lokal dikirim dulu, agar refresh berikutnya sudah memuat versi terbarunya.
+        val outboxEmpty = noteRepository.flushPending()
         val groupsOk = groupRepository.refresh() is Outcome.Success
         val notesOk = groupRepository.groups.first().map { noteRepository.refresh(it.id) }
             .all { it is Outcome.Success }
-        return groupsOk && notesOk
+        return outboxEmpty && groupsOk && notesOk
     }
 }

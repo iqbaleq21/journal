@@ -1,6 +1,7 @@
 package com.iqbal.journal.testing
 
 import com.iqbal.journal.domain.model.Group
+import com.iqbal.journal.domain.model.Member
 import com.iqbal.journal.domain.model.Note
 import com.iqbal.journal.domain.model.NoteColor
 import com.iqbal.journal.domain.model.Outcome
@@ -14,6 +15,7 @@ import java.time.Instant
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 class FakeProfileRepository : ProfileRepository {
@@ -21,10 +23,10 @@ class FakeProfileRepository : ProfileRepository {
     var nextResult: Outcome<Profile>? = null
     val createCalls = mutableListOf<Pair<String, String>>()
 
-    /** Bila diisi, createProfile menunggu sampai deferred ini selesai (untuk mengecek state "loading"). */
+    /** Bila diisi, saveProfile menunggu sampai deferred ini selesai (untuk mengecek state "loading"). */
     var gate: CompletableDeferred<Unit>? = null
 
-    override suspend fun createProfile(displayName: String, email: String): Outcome<Profile> {
+    override suspend fun saveProfile(displayName: String, email: String): Outcome<Profile> {
         createCalls += displayName to email
         gate?.await()
         val result = nextResult ?: Outcome.Success(Profile("me", displayName, email))
@@ -59,9 +61,44 @@ class FakeGroupRepository : GroupRepository {
         return nextGroupResult ?: Outcome.Success(group())
     }
 
+    /** Anggota per grup; aksi grup di bawah mengubahnya seperti server. */
+    val membersByGroup = MutableStateFlow<Map<String, List<Member>>>(emptyMap())
+    var actionResult: Outcome<Unit> = Outcome.Success(Unit)
+    val actions = mutableListOf<String>()
+
+    override fun members(groupId: String): Flow<List<Member>> = membersByGroup.map { it[groupId].orEmpty() }
+
+    override suspend fun leaveGroup(groupId: String): Outcome<Unit> = act("leave $groupId") {
+        groups.value = groups.value.filterNot { it.id == groupId }
+    }
+
+    override suspend fun removeMember(groupId: String, userId: String): Outcome<Unit> = act("remove $groupId $userId") {
+        membersByGroup.value =
+            membersByGroup.value + (groupId to members(groupId).first().filterNot { it.userId == userId })
+    }
+
+    override suspend fun renameGroup(groupId: String, name: String): Outcome<Unit> = act("rename $groupId $name") {
+        groups.value = groups.value.map { if (it.id == groupId) it.copy(name = name.trim()) else it }
+    }
+
+    override suspend fun regenerateInvite(groupId: String): Outcome<Unit> = act("regenerate $groupId") {}
+
+    override suspend fun setNotify(groupId: String, enabled: Boolean): Outcome<Unit> = act("notify $groupId $enabled") {
+        groups.value = groups.value.map { if (it.id == groupId) it.copy(notify = enabled) else it }
+    }
+
+    private suspend fun act(name: String, onSuccess: suspend () -> Unit): Outcome<Unit> {
+        actions += name
+        if (actionResult is Outcome.Success) onSuccess()
+        return actionResult
+    }
+
     companion object {
-        fun group(id: String = "g1", name: String = "Rumah") =
-            Group(id, name, ownerId = "me", memberCount = 1, inviteCode = "K7QM4X", inviteExpiresAt = null)
+        fun group(id: String = "g1", name: String = "Rumah", ownerId: String = "me") =
+            Group(id, name, ownerId = ownerId, memberCount = 1, inviteCode = "K7QM4X", inviteExpiresAt = null)
+
+        fun member(userId: String, name: String, groupId: String = "g1") =
+            Member(groupId = groupId, userId = userId, displayName = name, joinedAt = Instant.EPOCH)
     }
 }
 
@@ -97,6 +134,8 @@ class FakeNoteRepository : NoteRepository {
     }
 
     override suspend fun trimCache() = Unit
+
+    override suspend fun flushPending(): Boolean = true
 
     override suspend fun create(groupId: String, content: String): Outcome<Note> {
         createCalls += groupId to content

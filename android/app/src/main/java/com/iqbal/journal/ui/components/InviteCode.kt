@@ -64,15 +64,19 @@ fun InviteCodeField(
     )
 }
 
-/** Kode undangan read-only, untuk dibagikan. */
+/** Kode undangan read-only, untuk dibagikan. [container] disesuaikan dengan warna kartu di belakangnya. */
 @Composable
-fun InviteCodeDisplay(code: String, modifier: Modifier = Modifier) {
+fun InviteCodeDisplay(
+    code: String,
+    modifier: Modifier = Modifier,
+    container: Color = MaterialTheme.colorScheme.surfaceVariant
+) {
     CodeBoxes(
         code = code,
         activeIndex = null,
         filledBorder = Color.Transparent,
         emptyBorder = Color.Transparent,
-        container = MaterialTheme.colorScheme.surfaceVariant,
+        container = container,
         modifier = modifier.semantics(mergeDescendants = true) { contentDescription = code }
     )
 }

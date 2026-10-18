@@ -1,6 +1,9 @@
 package com.iqbal.journal.data.repository
 
 import com.iqbal.journal.data.local.NoteDao
+import com.iqbal.journal.data.local.NoteEntity
+import com.iqbal.journal.data.local.PendingOpEntity
+import com.iqbal.journal.data.local.PendingOpType
 import com.iqbal.journal.data.local.WidgetSelectionDao
 import com.iqbal.journal.data.remote.NoteChange
 import com.iqbal.journal.data.remote.NoteDto
@@ -13,6 +16,7 @@ import com.iqbal.journal.domain.model.Outcome
 import com.iqbal.journal.domain.repository.NoteRepository
 import com.iqbal.journal.domain.validation.NoteRules
 import java.time.Clock
+import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -24,6 +28,7 @@ class NoteRepositoryImpl @Inject constructor(
     private val noteDao: NoteDao,
     private val authorCache: AuthorCache,
     private val widgetSelectionDao: WidgetSelectionDao,
+    private val outbox: NoteOutbox,
     private val clock: Clock
 ) : NoteRepository {
 
@@ -36,7 +41,9 @@ class NoteRepositoryImpl @Inject constructor(
 
     override suspend fun refresh(groupId: String): Outcome<Unit> = outcomeOf {
         val notes = remote.fetchLatest(groupId, LOCAL_NOTES_PER_GROUP)
-        noteDao.replaceForGroup(groupId, notes.map { it.toEntity() })
+        // Catatan dengan perubahan lokal yang belum terkirim tidak ditimpa versi server.
+        val pendingIds = outbox.pendingNoteIds()
+        noteDao.replaceForGroup(groupId, notes.filterNot { it.id in pendingIds }.map { it.toEntity() })
         refreshPinnedOutside(groupId, fetchedIds = notes.map { it.id }.toSet())
         // Nama bisa berubah di Pengaturan, jadi semua penulis diambil ulang, bukan hanya yang baru.
         authorCache.refresh(notes.map { it.authorId }.toSet())
@@ -51,17 +58,38 @@ class NoteRepositoryImpl @Inject constructor(
 
     override suspend fun trimCache() = noteDao.deleteBeyondLimit(LOCAL_NOTES_PER_GROUP)
 
+    override suspend fun flushPending(): Boolean = outbox.flush()
+
+    // Tulis/edit/hapus langsung ke cache (tampil di UI & widget), lalu dikirim lewat antrean; tetap jalan saat offline.
     override suspend fun create(groupId: String, content: String): Outcome<Note> = outcomeOf {
-        save(remote.insert(groupId, NoteRules.normalizeContent(content)))
+        val now = clock.millis()
+        val note = NoteEntity(
+            id = UUID.randomUUID().toString(),
+            groupId = groupId,
+            authorId = remote.currentUserId(),
+            content = NoteRules.normalizeContent(content),
+            color = null,
+            createdAtEpochMillis = now,
+            updatedAtEpochMillis = now
+        )
+        saveLocally(note, PendingOpType.Create)
     }
 
     override suspend fun update(noteId: String, content: String): Outcome<Note> = outcomeOf {
-        save(remote.updateContent(noteId, NoteRules.normalizeContent(content)))
+        val current = checkNotNull(noteDao.observeById(noteId).first()) { "Catatan $noteId tidak ada" }.note
+        saveLocally(
+            current.copy(content = NoteRules.normalizeContent(content), updatedAtEpochMillis = clock.millis()),
+            PendingOpType.Update
+        )
     }
 
     override suspend fun delete(noteId: String): Outcome<Unit> = outcomeOf {
-        remote.softDelete(noteId, clock.instant())
+        val current = checkNotNull(noteDao.observeById(noteId).first()) { "Catatan $noteId tidak ada" }.note
         noteDao.deleteById(noteId)
+        outbox.enqueue(
+            PendingOpEntity(noteId = noteId, groupId = current.groupId, type = PendingOpType.Delete, content = null)
+        )
+        outbox.flush()
     }
 
     override suspend fun listenForChanges(onSubscribed: suspend () -> Unit): Outcome<Unit> = outcomeOf {
@@ -75,6 +103,8 @@ class NoteRepositoryImpl @Inject constructor(
     }
 
     private suspend fun apply(note: NoteDto) {
+        // Perubahan lokal yang belum terkirim lebih baru dari versi server mana pun yang tiba sekarang.
+        if (outbox.hasPending(note.id)) return
         if (note.deletedAt != null) {
             noteDao.deleteById(note.id)
             return
@@ -93,10 +123,11 @@ class NoteRepositoryImpl @Inject constructor(
         (pinned - found.map { it.id }.toSet()).forEach { noteDao.deleteById(it) }
     }
 
-    private suspend fun save(note: NoteDto): Note {
-        apply(note)
-        return checkNotNull(noteDao.observeById(note.id).first()) { "Catatan ${note.id} tidak tersimpan" }
-            .toDomain()
+    private suspend fun saveLocally(note: NoteEntity, type: PendingOpType): Note {
+        noteDao.upsert(note)
+        outbox.enqueue(PendingOpEntity(noteId = note.id, groupId = note.groupId, type = type, content = note.content))
+        outbox.flush()
+        return checkNotNull(noteDao.observeById(note.id).first()) { "Catatan ${note.id} tidak tersimpan" }.toDomain()
     }
 
     companion object {

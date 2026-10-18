@@ -9,5 +9,7 @@ data class Group(
     val memberCount: Int,
     /** Hanya terlihat oleh anggota; null jika grup sudah tidak menerima undangan. */
     val inviteCode: String?,
-    val inviteExpiresAt: Instant?
+    val inviteExpiresAt: Instant?,
+    /** Notifikasi catatan baru grup ini untuk saya (bisa dimatikan di Pengaturan). */
+    val notify: Boolean = true
 )

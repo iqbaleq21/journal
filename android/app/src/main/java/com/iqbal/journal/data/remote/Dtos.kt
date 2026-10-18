@@ -21,6 +21,14 @@ data class GroupDto(
 data class CountDto(val count: Int)
 
 @Serializable
+data class MembershipDto(
+    @SerialName("group_id") val groupId: String,
+    @SerialName("user_id") val userId: String,
+    @SerialName("joined_at") val joinedAt: String,
+    val notify: Boolean
+)
+
+@Serializable
 data class CreateGroupResultDto(
     @SerialName("group_id") val groupId: String,
     @SerialName("invite_code") val inviteCode: String
@@ -46,6 +54,8 @@ data class NoteDto(
 
 @Serializable
 data class NewNoteDto(
+    /** Dibuat di HP agar kirim ulang setelah respons hilang tidak menghasilkan catatan ganda. */
+    val id: String,
     @SerialName("group_id") val groupId: String,
     @SerialName("author_id") val authorId: String,
     val content: String

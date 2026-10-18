@@ -8,6 +8,6 @@ interface ProfileRepository {
     /** Profil pengguna di HP ini; null jika belum mengisi layar Kenalan. */
     val myProfile: Flow<Profile?>
 
-    /** Membuat identitas (anonymous sign-in bila perlu) lalu menyimpan profil. */
-    suspend fun createProfile(displayName: String, email: String): Outcome<Profile>
+    /** Simpan profil (Kenalan atau Pengaturan); identitas anonim dibuat dulu bila HP ini belum punya. */
+    suspend fun saveProfile(displayName: String, email: String): Outcome<Profile>
 }

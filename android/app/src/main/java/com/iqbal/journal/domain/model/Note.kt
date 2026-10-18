@@ -14,5 +14,7 @@ data class Note(
     val content: String,
     val color: NoteColor,
     val createdAt: Instant,
-    val updatedAt: Instant
+    val updatedAt: Instant,
+    /** Perubahan di HP ini yang belum terkirim ke server (mis. sedang offline). */
+    val isPending: Boolean = false
 )

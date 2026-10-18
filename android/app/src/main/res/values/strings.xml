@@ -34,7 +34,6 @@
 
     <!-- Beranda -->
     <string name="home_add_group">Buat atau gabung grup</string>
-    <string name="home_invite_action">Undang</string>
     <string name="home_notes_title">Catatan</string>
     <string name="home_notes_empty_title">Belum ada catatan</string>
     <string name="home_notes_empty_body">Catatan di grup ini akan tampil di sini.</string>
@@ -54,6 +53,7 @@
     <string name="note_author_you">Kamu</string>
     <string name="note_author_unknown">Anggota</string>
     <string name="note_meta_separator">· %1$s</string>
+    <string name="note_pending">Belum terkirim</string>
     <string name="time_just_now">baru saja</string>
     <string name="time_minutes">%1$d mnt</string>
     <string name="time_hours">%1$d j</string>
@@ -75,10 +75,44 @@
     <string name="editor_delete_body">Catatan akan hilang dari HP semua anggota grup.</string>
     <string name="editor_delete_confirm">Hapus</string>
 
+    <!-- Pengaturan -->
+    <string name="settings_title">Pengaturan</string>
+    <string name="settings_profile">Profil</string>
+    <string name="settings_identity_warning">Akunmu terikat ke HP ini. Jika jOURnal dihapus, datanya dibersihkan, atau kamu ganti HP, kamu harus bergabung lagi ke grup dan catatan lamamu tidak bisa diedit lagi.</string>
+    <string name="settings_notifications">Notifikasi catatan baru</string>
+    <string name="settings_notifications_body">Widget tetap diperbarui meski notifikasi grup dimatikan.</string>
+    <string name="settings_battery">Optimasi baterai</string>
+    <string name="settings_battery_body">Agar widget cepat diperbarui saat aplikasi tertutup, kecualikan jOURnal dari optimasi baterai.</string>
+    <string name="settings_battery_ok">jOURnal sudah dikecualikan dari optimasi baterai.</string>
+    <string name="settings_battery_vendor">Di HP Xiaomi, Oppo, Vivo, dan sejenisnya, aktifkan juga \"Mulai otomatis\" (autostart) untuk jOURnal di pengaturan aplikasi.</string>
+    <string name="settings_battery_open">Buka pengaturan baterai</string>
+    <string name="settings_version">jOURnal versi %1$s</string>
+
+    <!-- Detail grup -->
+    <string name="group_rename">Ganti nama grup</string>
+    <string name="group_member_count">%1$d dari %2$d anggota</string>
+    <string name="group_meta_you_owner">%1$s · kamu pemilik</string>
+    <string name="group_meta_owner">%1$s · pemilik: %2$s</string>
+    <string name="group_invite_title">KODE UNDANGAN</string>
+    <string name="group_invite_regenerate">Buat ulang</string>
+    <string name="group_invite_none_owner">Belum ada kode yang berlaku. Buat kode baru untuk mengundang.</string>
+    <string name="group_invite_none_member">Kode sudah tidak berlaku. Minta pemilik grup membuat kode baru.</string>
+    <string name="group_members_title">Anggota</string>
+    <string name="group_member_you">%1$s (kamu)</string>
+    <string name="group_owner_badge">Pemilik</string>
+    <string name="group_member_options">Opsi untuk %1$s</string>
+    <string name="group_remove_member">Keluarkan dari grup</string>
+    <string name="group_remove_title">Keluarkan %1$s?</string>
+    <string name="group_remove_body">Dia tidak bisa lagi melihat catatan grup ini. Catatan yang pernah ditulisnya tetap ada.</string>
+    <string name="group_remove_confirm">Keluarkan</string>
+    <string name="group_leave">Keluar dari grup</string>
+    <string name="group_leave_title">Keluar dari %1$s?</string>
+    <string name="group_leave_body">Catatanmu tetap ada untuk anggota lain. Untuk kembali, kamu perlu kode undangan baru.</string>
+    <string name="group_leave_confirm">Keluar</string>
+    <string name="group_regenerate_title">Buat kode baru?</string>
+    <string name="group_regenerate_body">Kode lama langsung tidak berlaku. Kode baru berlaku 7 hari.</string>
+
     <!-- Undangan -->
-    <string name="invite_title">Kode undangan</string>
-    <string name="invite_expired">Kode sudah kedaluwarsa</string>
-    <string name="invite_unavailable">Grup ini sedang tidak menerima undangan.</string>
     <string name="invite_share">Bagikan</string>
     <string name="invite_share_chooser">Bagikan kode undangan</string>
     <string name="invite_share_text">Gabung ke grup \"%1$s\" di jOURnal pakai kode %2$s</string>
@@ -119,5 +153,7 @@
     <string name="error_group_full">Grup sudah penuh (maksimal 10 anggota).</string>
     <string name="error_already_member">Kamu sudah jadi anggota grup ini.</string>
     <string name="error_not_owner">Hanya pemilik grup yang bisa melakukannya.</string>
+    <string name="error_not_member">Kamu sudah bukan anggota grup ini.</string>
+    <string name="error_cannot_remove_self">Untuk keluar dari grup, pakai tombol Keluar dari grup.</string>
     <string name="error_unknown">Terjadi kesalahan. Coba lagi.</string>
 </resources>

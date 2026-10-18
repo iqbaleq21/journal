@@ -10,11 +10,18 @@ import androidx.room.RoomDatabase
         GroupEntity::class,
         NoteEntity::class,
         AuthorEntity::class,
-        WidgetSelectionEntity::class
+        WidgetSelectionEntity::class,
+        MemberEntity::class,
+        PendingOpEntity::class
     ],
-    version = 3,
+    version = 5,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)]
+    autoMigrations = [
+        AutoMigration(from = 1, to = 2),
+        AutoMigration(from = 2, to = 3),
+        AutoMigration(from = 3, to = 4),
+        AutoMigration(from = 4, to = 5)
+    ]
 )
 abstract class JournalDatabase : RoomDatabase() {
     abstract fun myProfileDao(): MyProfileDao
@@ -26,6 +33,10 @@ abstract class JournalDatabase : RoomDatabase() {
     abstract fun authorDao(): AuthorDao
 
     abstract fun widgetSelectionDao(): WidgetSelectionDao
+
+    abstract fun memberDao(): MemberDao
+
+    abstract fun pendingOpDao(): PendingOpDao
 
     companion object {
         const val NAME = "journal.db"

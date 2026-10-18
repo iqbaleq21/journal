@@ -1,6 +1,7 @@
 package com.iqbal.journal.data.local
 
 import androidx.room.Dao
+import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Upsert
@@ -23,6 +24,9 @@ interface GroupDao {
     @Query("SELECT * FROM groups WHERE id = :id")
     suspend fun getById(id: String): GroupEntity?
 
+    @Query("UPDATE groups SET notify = :notify WHERE id = :id")
+    suspend fun setNotify(id: String, notify: Boolean)
+
     /** Samakan cache dengan server: grup yang tidak lagi diikuti, beserta catatannya, ikut terhapus. */
     @Transaction
     suspend fun replaceAll(groups: List<GroupEntity>) {
@@ -43,10 +47,36 @@ interface GroupDao {
 }
 
 @Dao
+interface MemberDao {
+    @Query(
+        """
+        SELECT members.*, authors.display_name AS display_name FROM members
+        LEFT JOIN authors ON authors.id = members.user_id
+        WHERE members.group_id = :groupId
+        ORDER BY members.joined_at
+        """
+    )
+    fun observeByGroup(groupId: String): Flow<List<MemberWithName>>
+
+    @Transaction
+    suspend fun replaceAll(members: List<MemberEntity>) {
+        deleteAll()
+        upsertAll(members)
+    }
+
+    @Upsert
+    suspend fun upsertAll(members: List<MemberEntity>)
+
+    @Query("DELETE FROM members")
+    suspend fun deleteAll()
+}
+
+@Dao
 interface NoteDao {
     @Query(
         """
-        SELECT notes.*, authors.display_name AS author_name FROM notes
+        SELECT notes.*, authors.display_name AS author_name,
+        EXISTS(SELECT 1 FROM pending_ops WHERE pending_ops.note_id = notes.id) AS is_pending FROM notes
         LEFT JOIN authors ON authors.id = notes.author_id
         WHERE notes.group_id = :groupId
         ORDER BY notes.updated_at DESC
@@ -56,7 +86,8 @@ interface NoteDao {
 
     @Query(
         """
-        SELECT notes.*, authors.display_name AS author_name FROM notes
+        SELECT notes.*, authors.display_name AS author_name,
+        EXISTS(SELECT 1 FROM pending_ops WHERE pending_ops.note_id = notes.id) AS is_pending FROM notes
         LEFT JOIN authors ON authors.id = notes.author_id
         WHERE notes.id = :id
         """
@@ -93,6 +124,7 @@ interface NoteDao {
     @Query(
         """
         DELETE FROM notes WHERE id NOT IN (SELECT note_id FROM widget_selections)
+        AND id NOT IN (SELECT note_id FROM pending_ops)
         AND (SELECT COUNT(*) FROM notes newer
              WHERE newer.group_id = notes.group_id AND newer.updated_at > notes.updated_at) >= :limitPerGroup
         """
@@ -103,6 +135,7 @@ interface NoteDao {
         """
         DELETE FROM notes WHERE group_id = :groupId AND id NOT IN (:keepIds)
         AND id NOT IN (SELECT note_id FROM widget_selections)
+        AND id NOT IN (SELECT note_id FROM pending_ops)
         """
     )
     suspend fun deleteFromGroupExcept(groupId: String, keepIds: List<String>)
@@ -127,6 +160,24 @@ interface WidgetSelectionDao {
 
     @Query("DELETE FROM widget_selections WHERE app_widget_id IN (:appWidgetIds)")
     suspend fun delete(appWidgetIds: List<Int>)
+}
+
+@Dao
+interface PendingOpDao {
+    @Insert
+    suspend fun insert(op: PendingOpEntity)
+
+    @Query("SELECT * FROM pending_ops ORDER BY id")
+    suspend fun getAll(): List<PendingOpEntity>
+
+    @Query("SELECT DISTINCT note_id FROM pending_ops")
+    suspend fun pendingNoteIds(): List<String>
+
+    @Query("SELECT EXISTS(SELECT 1 FROM pending_ops WHERE note_id = :noteId)")
+    suspend fun hasPending(noteId: String): Boolean
+
+    @Query("DELETE FROM pending_ops WHERE id = :id")
+    suspend fun delete(id: Long)
 }
 
 @Dao

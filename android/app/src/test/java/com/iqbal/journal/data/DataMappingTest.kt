@@ -18,6 +18,8 @@ class ErrorMappingTest {
         assertEquals(JournalError.InviteNotFound, mapServerMessage("INVITE_NOT_FOUND"))
         assertEquals(JournalError.GroupFull, mapServerMessage("ERROR: GROUP_FULL (SQLSTATE P0001)"))
         assertEquals(JournalError.AlreadyMember, mapServerMessage("ALREADY_MEMBER"))
+        assertEquals(JournalError.NotMember, mapServerMessage("NOT_MEMBER"))
+        assertEquals(JournalError.CannotRemoveSelf, mapServerMessage("CANNOT_REMOVE_SELF"))
     }
 
     @Test
@@ -39,15 +41,16 @@ class GroupMappingTest {
             members = listOf(CountDto(4))
         )
 
-        val group = dto.toEntity().toDomain()
+        val group = dto.toEntity(notify = false).toDomain()
 
         assertEquals(4, group.memberCount)
+        assertEquals(false, group.notify)
         assertEquals(Instant.parse("2026-10-25T08:00:00.123Z"), group.inviteExpiresAt)
     }
 
     @Test
     fun `grup tanpa undangan dan tanpa embed anggota tetap aman`() {
-        val group = GroupDto(id = "g1", name = "Rumah", ownerId = "me").toEntity().toDomain()
+        val group = GroupDto(id = "g1", name = "Rumah", ownerId = "me").toEntity(notify = true).toDomain()
 
         assertEquals(0, group.memberCount)
         assertNull(group.inviteCode)

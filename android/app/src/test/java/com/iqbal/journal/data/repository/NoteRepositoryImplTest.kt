@@ -2,7 +2,10 @@ package com.iqbal.journal.data.repository
 
 import com.iqbal.journal.data.local.AuthorDao
 import com.iqbal.journal.data.local.NoteDao
+import com.iqbal.journal.data.local.NoteEntity
 import com.iqbal.journal.data.local.NoteWithAuthor
+import com.iqbal.journal.data.local.PendingOpEntity
+import com.iqbal.journal.data.local.PendingOpType
 import com.iqbal.journal.data.local.WidgetSelectionDao
 import com.iqbal.journal.data.remote.AuthorDto
 import com.iqbal.journal.data.remote.NoteChange
@@ -16,6 +19,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import java.io.IOException
 import java.time.Clock
 import java.time.Instant
@@ -33,6 +37,10 @@ class NoteRepositoryImplTest {
     private val noteDao = mockk<NoteDao>(relaxUnitFun = true) { every { observeVersion() } returns emptyFlow() }
     private val authorDao = mockk<AuthorDao>(relaxUnitFun = true)
     private val widgetSelectionDao = mockk<WidgetSelectionDao> { coEvery { pinnedNoteIds(any()) } returns emptyList() }
+    private val outbox = mockk<NoteOutbox>(relaxed = true) {
+        coEvery { pendingNoteIds() } returns emptySet()
+        coEvery { hasPending(any()) } returns false
+    }
     private val now = Instant.parse("2026-10-18T05:00:00Z")
     private val repository =
         NoteRepositoryImpl(
@@ -40,6 +48,7 @@ class NoteRepositoryImplTest {
             noteDao,
             AuthorCache(profileRemote, authorDao),
             widgetSelectionDao,
+            outbox,
             Clock.fixed(now, ZoneOffset.UTC)
         )
 
@@ -104,11 +113,32 @@ class NoteRepositoryImplTest {
     }
 
     @Test
-    fun `hapus mengirim soft delete dengan waktu sekarang lalu membuang dari cache`() = runTest {
-        coEvery { remote.softDelete("n1", now) } returns Unit
+    fun `hapus langsung membuang dari cache lalu mengantrekan soft delete`() = runTest {
+        every { noteDao.observeById("n1") } returns flowOf(NoteWithAuthor(dto("n1").toEntity(), "Ibu"))
 
         assertEquals(Outcome.Success(Unit), repository.delete("n1"))
+
         coVerify { noteDao.deleteById("n1") }
+        coVerify {
+            outbox.enqueue(PendingOpEntity(noteId = "n1", groupId = "g1", type = PendingOpType.Delete, content = null))
+        }
+        coVerify { outbox.flush() }
+    }
+
+    @Test
+    fun `refresh dan realtime tidak menimpa catatan yang perubahannya belum terkirim`() = runTest {
+        coEvery { outbox.pendingNoteIds() } returns setOf("lokal")
+        coEvery { outbox.hasPending("lokal") } returns true
+        coEvery { remote.fetchLatest(any(), any()) } returns listOf(dto("n1"), dto("lokal"))
+        coEvery { profileRemote.fetchAuthors(any()) } returns emptyList()
+        every { remote.changes() } returns
+            flowOf(NoteChange.Saved(dto("lokal", deletedAt = "2026-10-18T04:00:00+00:00")))
+
+        repository.refresh("g1")
+        repository.listenForChanges(onSubscribed = {})
+
+        coVerify { noteDao.replaceForGroup("g1", listOf(dto("n1").toEntity())) }
+        coVerify(exactly = 0) { noteDao.deleteById("lokal") }
     }
 
     @Test
@@ -160,15 +190,23 @@ class NoteRepositoryImplTest {
     }
 
     @Test
-    fun `catatan baru disimpan ke cache dan dikembalikan`() = runTest {
-        val saved = dto("n1", "me")
-        coEvery { remote.insert("g1", "Galon habis") } returns saved
-        coEvery { authorDao.exists("me") } returns true
-        every { noteDao.observeById("n1") } returns flowOf(NoteWithAuthor(saved.toEntity(), "Ayah"))
+    fun `catatan baru langsung tersimpan di cache dengan id dari HP lalu diantrekan`() = runTest {
+        every { remote.currentUserId() } returns "me"
+        val saved = slot<NoteEntity>()
+        coEvery { noteDao.upsert(capture(saved)) } returns Unit
+        every { noteDao.observeById(any()) } answers
+            { flowOf(NoteWithAuthor(saved.captured, "Ayah", isPending = true)) }
 
-        val result = repository.create("g1", "  Galon habis ")
+        val note = (repository.create("g1", "  Galon habis ") as Outcome.Success).value
 
-        assertEquals("n1", (result as Outcome.Success).value.id)
-        coVerify { noteDao.upsert(saved.toEntity()) }
+        assertEquals("Galon habis", note.content)
+        assertEquals("me", note.authorId)
+        assertEquals(true, note.isPending)
+        coVerify {
+            outbox.enqueue(
+                PendingOpEntity(noteId = note.id, groupId = "g1", type = PendingOpType.Create, content = "Galon habis")
+            )
+        }
+        coVerify { outbox.flush() }
     }
 }

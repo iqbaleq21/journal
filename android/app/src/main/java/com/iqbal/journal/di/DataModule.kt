@@ -9,8 +9,10 @@ import androidx.room.Room
 import com.iqbal.journal.data.local.AuthorDao
 import com.iqbal.journal.data.local.GroupDao
 import com.iqbal.journal.data.local.JournalDatabase
+import com.iqbal.journal.data.local.MemberDao
 import com.iqbal.journal.data.local.MyProfileDao
 import com.iqbal.journal.data.local.NoteDao
+import com.iqbal.journal.data.local.PendingOpDao
 import com.iqbal.journal.data.local.WidgetSelectionDao
 import com.iqbal.journal.data.repository.DeviceRepositoryImpl
 import com.iqbal.journal.data.repository.GroupRepositoryImpl
@@ -55,6 +57,12 @@ object LocalDataModule {
 
     @Provides
     fun provideWidgetSelectionDao(database: JournalDatabase): WidgetSelectionDao = database.widgetSelectionDao()
+
+    @Provides
+    fun provideMemberDao(database: JournalDatabase): MemberDao = database.memberDao()
+
+    @Provides
+    fun providePendingOpDao(database: JournalDatabase): PendingOpDao = database.pendingOpDao()
 
     @Provides
     fun provideClock(): Clock = Clock.systemDefaultZone()

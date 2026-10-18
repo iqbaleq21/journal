@@ -1,8 +1,9 @@
 package com.iqbal.journal.ui.home
 
-import android.content.Context
-import android.content.Intent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -18,6 +19,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items as staggeredItems
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -60,19 +62,19 @@ import java.time.Instant
 fun HomeRoute(
     onAddGroup: () -> Unit,
     onOpenEditor: (groupId: String, noteId: String?) -> Unit,
+    onOpenGroup: (groupId: String) -> Unit,
+    onOpenSettings: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val context = LocalContext.current
     RequestNotificationPermission()
     HomeScreen(
         state = state,
         onSelectGroup = viewModel::onSelectGroup,
         onAddGroup = onAddGroup,
         onOpenEditor = onOpenEditor,
-        onInviteClick = viewModel::onInviteClick,
-        onInviteDismiss = viewModel::onInviteDismiss,
-        onShareInvite = { group, code -> context.shareInvite(group.name, code) },
+        onOpenGroup = onOpenGroup,
+        onOpenSettings = onOpenSettings,
         onErrorShown = viewModel::onErrorShown
     )
 }
@@ -83,9 +85,8 @@ fun HomeScreen(
     onSelectGroup: (String) -> Unit,
     onAddGroup: () -> Unit,
     onOpenEditor: (groupId: String, noteId: String?) -> Unit,
-    onInviteClick: () -> Unit,
-    onInviteDismiss: () -> Unit,
-    onShareInvite: (Group, String) -> Unit,
+    onOpenGroup: (groupId: String) -> Unit,
+    onOpenSettings: () -> Unit,
     onErrorShown: () -> Unit
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -111,10 +112,15 @@ fun HomeScreen(
                 .padding(innerPadding)
                 .padding(top = Spacing.medium)
         ) {
-            Wordmark(
-                style = MaterialTheme.typography.headlineLarge,
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(horizontal = Spacing.screen)
-            )
+            ) {
+                Wordmark(style = MaterialTheme.typography.headlineLarge, modifier = Modifier.weight(1f))
+                FilledTonalIconButton(onClick = onOpenSettings, modifier = Modifier.size(Sizes.touchTarget)) {
+                    Icon(painterResource(R.drawable.ic_settings), stringResource(R.string.settings_title))
+                }
+            }
             GroupChips(
                 groups = state.groups,
                 selectedGroupId = state.selectedGroupId,
@@ -125,7 +131,8 @@ fun HomeScreen(
                 GroupSummaryCard(
                     group = selectedGroup,
                     noteCount = state.notes.size,
-                    onClick = onInviteClick,
+                    memberNames = state.memberNames,
+                    onClick = { onOpenGroup(selectedGroup.id) },
                     modifier = Modifier.padding(horizontal = Spacing.screen)
                 )
             }
@@ -142,10 +149,6 @@ fun HomeScreen(
                 )
             }
         }
-    }
-
-    if (state.isInviteSheetOpen && selectedGroup != null) {
-        InviteSheet(group = selectedGroup, onShare = { onShareInvite(selectedGroup, it) }, onDismiss = onInviteDismiss)
     }
 }
 
@@ -178,7 +181,13 @@ private fun GroupChips(groups: List<Group>, selectedGroupId: String?, onSelect: 
 }
 
 @Composable
-private fun GroupSummaryCard(group: Group, noteCount: Int, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun GroupSummaryCard(
+    group: Group,
+    noteCount: Int,
+    memberNames: List<String>,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Surface(
         onClick = onClick,
         shape = MaterialTheme.shapes.large,
@@ -201,26 +210,35 @@ private fun GroupSummaryCard(group: Group, noteCount: Int, onClick: () -> Unit, 
                     style = MaterialTheme.typography.labelMedium
                 )
             }
-            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surface) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.small),
-                    modifier = Modifier.padding(horizontal = Spacing.medium, vertical = Spacing.small)
-                ) {
-                    Icon(painterResource(R.drawable.ic_share), contentDescription = null, Modifier.size(Sizes.progress))
-                    Text(stringResource(R.string.home_invite_action), style = MaterialTheme.typography.labelMedium)
-                }
+            AvatarStack(memberNames)
+        }
+    }
+}
+
+/** Inisial anggota yang saling menumpuk, seperti di mockup Beranda. */
+@Composable
+private fun AvatarStack(names: List<String>) {
+    val swatches = JournalTheme.noteColors.let { listOf(it.butter, it.sky, it.peach, it.mint, it.lilac) }
+    Row(horizontalArrangement = Arrangement.spacedBy(-Spacing.cardGap)) {
+        names.take(MAX_AVATARS).forEachIndexed { index, name ->
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(Sizes.avatarStack)
+                    .border(Sizes.outlineThick, MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                    .background(swatches[index % swatches.size].container, CircleShape)
+            ) {
+                Text(
+                    name.take(1).uppercase(),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             }
         }
     }
 }
 
-private fun Context.shareInvite(groupName: String, code: String) {
-    val send = Intent(Intent.ACTION_SEND)
-        .setType("text/plain")
-        .putExtra(Intent.EXTRA_TEXT, getString(R.string.invite_share_text, groupName, code))
-    startActivity(Intent.createChooser(send, getString(R.string.invite_share_chooser)))
-}
+private const val MAX_AVATARS = 4
 
 @Preview(showBackground = true)
 @Composable
@@ -236,13 +254,18 @@ private fun HomeScreenPreview() {
     )
     JournalTheme {
         HomeScreen(
-            state = HomeUiState(groups = groups, selectedGroupId = "1", notes = previewNotes, myUserId = "a"),
+            state = HomeUiState(
+                groups = groups,
+                selectedGroupId = "1",
+                notes = previewNotes,
+                memberNames = listOf("Ayah", "Ibu", "Kiara"),
+                myUserId = "a"
+            ),
             onSelectGroup = {},
             onAddGroup = {},
             onOpenEditor = { _, _ -> },
-            onInviteClick = {},
-            onInviteDismiss = {},
-            onShareInvite = { _, _ -> },
+            onOpenGroup = {},
+            onOpenSettings = {},
             onErrorShown = {}
         )
     }

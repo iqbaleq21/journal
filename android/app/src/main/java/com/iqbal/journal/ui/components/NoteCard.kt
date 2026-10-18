@@ -67,6 +67,14 @@ fun NoteCard(note: Note, isMine: Boolean, isOnWidget: Boolean, onClick: () -> Un
                 maxLines = PREVIEW_MAX_LINES,
                 overflow = TextOverflow.Ellipsis
             )
+            if (note.isPending) {
+                // Baris sendiri agar tidak memotong nama penulis di kartu yang sempit.
+                Text(
+                    stringResource(R.string.note_pending),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = swatch.onContainerMuted
+                )
+            }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.small)

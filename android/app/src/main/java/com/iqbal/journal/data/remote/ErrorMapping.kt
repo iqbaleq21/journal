@@ -14,7 +14,9 @@ private val ServerErrorCodes = mapOf(
     "INVITE_EXPIRED" to JournalError.InviteExpired,
     "GROUP_FULL" to JournalError.GroupFull,
     "ALREADY_MEMBER" to JournalError.AlreadyMember,
-    "NOT_OWNER" to JournalError.NotOwner
+    "NOT_OWNER" to JournalError.NotOwner,
+    "NOT_MEMBER" to JournalError.NotMember,
+    "CANNOT_REMOVE_SELF" to JournalError.CannotRemoveSelf
 )
 
 internal fun mapServerMessage(message: String?): JournalError =

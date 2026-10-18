@@ -9,6 +9,8 @@ sealed interface JournalError {
     data object GroupFull : JournalError
     data object AlreadyMember : JournalError
     data object NotOwner : JournalError
+    data object NotMember : JournalError
+    data object CannotRemoveSelf : JournalError
     data object Unknown : JournalError
 }
 

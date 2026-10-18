@@ -54,8 +54,8 @@ class NoteRemoteDataSource @Inject constructor(private val client: SupabaseClien
         .select { filter { isIn("id", noteIds.toList()) } }
         .decodeList()
 
-    suspend fun insert(groupId: String, content: String): NoteDto = client.from(Tables.NOTES)
-        .insert(NewNoteDto(groupId = groupId, authorId = currentUserId(), content = content)) { select() }
+    suspend fun insert(noteId: String, groupId: String, content: String): NoteDto = client.from(Tables.NOTES)
+        .insert(NewNoteDto(id = noteId, groupId = groupId, authorId = currentUserId(), content = content)) { select() }
         .decodeSingle()
 
     suspend fun updateContent(noteId: String, content: String): NoteDto = client.from(Tables.NOTES)
@@ -107,7 +107,8 @@ class NoteRemoteDataSource @Inject constructor(private val client: SupabaseClien
         is PostgresAction.Select -> null
     }
 
-    private fun currentUserId(): String = checkNotNull(client.auth.currentUserOrNull()) { "Belum ada sesi" }.id
+    /** Tersedia meski offline: sesi tersimpan di HP. */
+    fun currentUserId(): String = checkNotNull(client.auth.currentUserOrNull()) { "Belum ada sesi" }.id
 
     private companion object {
         const val SCHEMA = "public"

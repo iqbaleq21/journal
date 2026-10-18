@@ -13,5 +13,7 @@ fun JournalError.messageRes(): Int = when (this) {
     JournalError.GroupFull -> R.string.error_group_full
     JournalError.AlreadyMember -> R.string.error_already_member
     JournalError.NotOwner -> R.string.error_not_owner
+    JournalError.NotMember -> R.string.error_not_member
+    JournalError.CannotRemoveSelf -> R.string.error_cannot_remove_self
     JournalError.Unknown -> R.string.error_unknown
 }

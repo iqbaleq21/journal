@@ -10,7 +10,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.iqbal.journal.ui.editor.EditorRoute
+import com.iqbal.journal.ui.groupdetail.GroupDetailRoute
 import com.iqbal.journal.ui.home.HomeRoute
+import com.iqbal.journal.ui.settings.SettingsRoute
 import com.iqbal.journal.ui.start.StartRoute
 import kotlinx.serialization.Serializable
 
@@ -24,6 +26,13 @@ data object HomeDestination
 @Serializable
 data class EditorDestination(val groupId: String, val noteId: String? = null)
 
+/** Nama properti dipakai sebagai kunci argumen di GroupDetailViewModel. */
+@Serializable
+data class GroupDetailDestination(val groupId: String)
+
+@Serializable
+data object SettingsDestination
+
 /** Navigasi aplikasi utama (setelah profil diisi). */
 @Composable
 fun JournalNavHost(
@@ -35,11 +44,19 @@ fun JournalNavHost(
     // Tujuan awal hanya ditentukan sekali; perubahan selanjutnya lewat navigasi.
     val startDestination: Any = remember { if (hasGroups) HomeDestination else StartDestination(canGoBack = false) }
 
-    // Grup bisa muncul belakangan lewat sinkron (mis. sesi lama dipulihkan); layar Mulai awal lalu tidak relevan.
     LaunchedEffect(hasGroups) {
-        val onInitialStart = navController.currentBackStackEntry?.destination?.hasRoute<StartDestination>() == true &&
-            navController.previousBackStackEntry == null
-        if (hasGroups && onInitialStart) navController.navigateToHome()
+        val onStart = navController.currentBackStackEntry?.destination?.hasRoute<StartDestination>() == true
+        val onInitialStart = onStart && navController.previousBackStackEntry == null
+        when {
+            // Grup bisa muncul belakangan lewat sinkron (mis. sesi lama dipulihkan);
+            // layar Mulai awal jadi tidak relevan.
+            hasGroups && onInitialStart -> navController.navigateToHome()
+
+            // Grup terakhir ditinggalkan atau anggota dikeluarkan: tidak ada lagi yang bisa ditampilkan Beranda.
+            !hasGroups && !onStart -> navController.navigate(StartDestination(canGoBack = false)) {
+                popUpTo(navController.graph.id) { inclusive = true }
+            }
+        }
     }
 
     LaunchedEffect(noteLink) {
@@ -54,19 +71,35 @@ fun JournalNavHost(
             val canGoBack = entry.toRoute<StartDestination>().canGoBack
             StartRoute(
                 onGroupReady = { navController.navigateToHome() },
-                onBack = if (canGoBack) ({ navController.popBackStack() }) else null
+                onBack = if (canGoBack) ({ navController.navigateBack() }) else null
             )
         }
         composable<HomeDestination> {
             HomeRoute(
                 onAddGroup = { navController.navigate(StartDestination(canGoBack = true)) },
-                onOpenEditor = { groupId, noteId -> navController.navigate(EditorDestination(groupId, noteId)) }
+                onOpenEditor = { groupId, noteId -> navController.navigate(EditorDestination(groupId, noteId)) },
+                onOpenGroup = { groupId -> navController.navigate(GroupDetailDestination(groupId)) },
+                onOpenSettings = { navController.navigate(SettingsDestination) }
             )
         }
+        composable<GroupDetailDestination> {
+            GroupDetailRoute(onBack = { navController.navigateBack() }, onGone = { navController.navigateBack() })
+        }
+        composable<SettingsDestination> {
+            SettingsRoute(onBack = { navController.navigateBack() })
+        }
         composable<EditorDestination> {
-            EditorRoute(onDone = { navController.popBackStack() }, onBack = { navController.popBackStack() })
+            EditorRoute(onDone = { navController.navigateBack() }, onBack = { navController.navigateBack() })
         }
     }
+}
+
+/**
+ * Kembali satu layar, tapi tidak pernah membuang layar awal: back yang terpanggil dua kali
+ * (mis. ketukan ganda) jika tidak dijaga akan mengosongkan NavHost dan menampilkan layar kosong.
+ */
+private fun NavHostController.navigateBack() {
+    if (previousBackStackEntry != null) popBackStack()
 }
 
 private fun NavHostController.navigateToHome() = navigate(HomeDestination) {

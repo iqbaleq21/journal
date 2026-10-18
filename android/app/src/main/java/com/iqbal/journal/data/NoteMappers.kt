@@ -29,7 +29,8 @@ internal fun NoteWithAuthor.toDomain() = Note(
     content = note.content,
     color = noteColorOf(note.color),
     createdAt = Instant.ofEpochMilli(note.createdAtEpochMillis),
-    updatedAt = Instant.ofEpochMilli(note.updatedAtEpochMillis)
+    updatedAt = Instant.ofEpochMilli(note.updatedAtEpochMillis),
+    isPending = isPending
 )
 
 internal fun WidgetSelectionEntity.toDomain() =

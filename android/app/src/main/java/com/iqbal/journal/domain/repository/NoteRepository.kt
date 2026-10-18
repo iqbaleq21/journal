@@ -23,11 +23,20 @@ interface NoteRepository {
     /** Buang catatan lama di luar batas cache per grup; catatan yang dipakai widget dipertahankan. */
     suspend fun trimCache()
 
+    /**
+     * Kirim perubahan yang tertunda (tulis/edit/hapus saat offline) ke server.
+     * @return true bila antrean sudah kosong; false bila masih ada yang menunggu koneksi.
+     */
+    suspend fun flushPending(): Boolean
+
     suspend fun create(groupId: String, content: String): Outcome<Note>
 
     suspend fun update(noteId: String, content: String): Outcome<Note>
 
-    /** Soft delete agar penghapusan ikut tersinkron ke HP anggota lain. */
+    /**
+     * Soft delete agar penghapusan ikut tersinkron ke HP anggota lain.
+     * Seperti tulis dan edit, tetap berhasil saat offline lalu dikirim saat online.
+     */
     suspend fun delete(noteId: String): Outcome<Unit>
 
     /**

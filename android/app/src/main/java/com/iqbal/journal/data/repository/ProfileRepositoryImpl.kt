@@ -21,7 +21,7 @@ class ProfileRepositoryImpl @Inject constructor(
 
     override val myProfile: Flow<Profile?> = dao.observe().map { it?.toDomain() }
 
-    override suspend fun createProfile(displayName: String, email: String): Outcome<Profile> = outcomeOf {
+    override suspend fun saveProfile(displayName: String, email: String): Outcome<Profile> = outcomeOf {
         val profile = Profile(
             id = remote.ensureSignedIn(),
             displayName = ProfileRules.normalizeName(displayName),

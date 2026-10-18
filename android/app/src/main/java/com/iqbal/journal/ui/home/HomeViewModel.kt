@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -32,14 +33,15 @@ data class HomeUiState(
     val notes: List<Note> = emptyList(),
     val myUserId: String? = null,
     val widgetNoteIds: Set<String> = emptySet(),
-    val isInviteSheetOpen: Boolean = false,
+    /** Nama anggota grup terpilih, untuk tumpukan avatar di kartu grup. */
+    val memberNames: List<String> = emptyList(),
     val error: JournalError? = null
 ) {
     val selectedGroup: Group? get() = groups.firstOrNull { it.id == selectedGroupId }
 }
 
 /** State yang hanya hidup di layar ini (bukan dari repository). */
-private data class HomeLocalState(val isInviteSheetOpen: Boolean = false, val error: JournalError? = null)
+private data class HomeLocalState(val error: JournalError? = null)
 
 private const val STOP_TIMEOUT_MILLIS = 5_000L
 
@@ -58,20 +60,24 @@ class HomeViewModel @Inject constructor(
         if (groupId == null) flowOf(emptyList()) else noteRepository.notes(groupId)
     }
 
+    private val selectedMemberNames = groupRepository.selectedGroupId.flatMapLatest { groupId ->
+        if (groupId == null) flowOf(emptyList()) else groupRepository.members(groupId)
+    }.map { members -> members.mapNotNull { it.displayName } }
+
     val uiState: StateFlow<HomeUiState> = combine(
         groupRepository.groups,
         groupRepository.selectedGroupId,
-        selectedNotes,
+        combine(selectedNotes, selectedMemberNames, ::Pair),
         combine(profileRepository.myProfile, widgetRepository.pinnedNoteIds, ::Pair),
         localState
-    ) { groups, selectedId, notes, (profile, widgetNoteIds), local ->
+    ) { groups, selectedId, (notes, memberNames), (profile, widgetNoteIds), local ->
         HomeUiState(
             groups = groups,
             selectedGroupId = selectedId,
             notes = notes,
             myUserId = profile?.id,
             widgetNoteIds = widgetNoteIds,
-            isInviteSheetOpen = local.isInviteSheetOpen,
+            memberNames = memberNames,
             error = local.error
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), HomeUiState())
@@ -89,10 +95,6 @@ class HomeViewModel @Inject constructor(
     fun onSelectGroup(groupId: String) {
         viewModelScope.launch { groupRepository.selectGroup(groupId) }
     }
-
-    fun onInviteClick() = localState.update { it.copy(isInviteSheetOpen = true) }
-
-    fun onInviteDismiss() = localState.update { it.copy(isInviteSheetOpen = false) }
 
     fun onErrorShown() = localState.update { it.copy(error = null) }
 }
