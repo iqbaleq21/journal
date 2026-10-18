@@ -1,49 +1,30 @@
 package com.iqbal.journal.ui
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
-import com.iqbal.journal.R
-import com.iqbal.journal.ui.components.Wordmark
-import com.iqbal.journal.ui.theme.JournalTheme
-import com.iqbal.journal.ui.theme.Spacing
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.iqbal.journal.ui.navigation.JournalNavHost
+import com.iqbal.journal.ui.onboarding.OnboardingRoute
 
-/** Akar UI. Navigasi antar layar ditambahkan mulai M1. */
+/** Akar UI: Kenalan sampai profil diisi, lalu aplikasi utama. */
 @Composable
-fun JournalApp() {
-    Scaffold { innerPadding ->
-        Column(
-            modifier = Modifier
+fun JournalApp(viewModel: RootViewModel = hiltViewModel()) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    when (val current = state) {
+        RootUiState.Loading -> Box(
+            Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = Spacing.screen),
-            verticalArrangement = Arrangement.spacedBy(Spacing.medium, Alignment.CenterVertically)
-        ) {
-            Wordmark(style = MaterialTheme.typography.displayLarge)
-            Text(
-                text = stringResource(R.string.setup_headline),
-                style = MaterialTheme.typography.headlineMedium
-            )
-            Text(
-                text = stringResource(R.string.setup_placeholder),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
+                .background(MaterialTheme.colorScheme.background)
+        )
 
-@Preview(showBackground = true)
-@Composable
-private fun JournalAppPreview() {
-    JournalTheme { JournalApp() }
+        RootUiState.NeedsProfile -> OnboardingRoute()
+
+        is RootUiState.Ready -> JournalNavHost(hasGroups = current.hasGroups)
+    }
 }

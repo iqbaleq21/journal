@@ -1,6 +1,67 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name" translatable="false">jOURnal</string>
-    <string name="setup_headline">Catatan bersama, selalu ada di layar utama.</string>
-    <string name="setup_placeholder">Fondasi aplikasi siap. Layar Kenalan menyusul.</string>
+
+    <!-- Umum -->
+    <string name="common_back">Kembali</string>
+    <string name="common_cancel">Batal</string>
+
+    <!-- Kenalan -->
+    <string name="onboarding_headline">Catatan bersama, selalu ada di layar utama.</string>
+    <string name="onboarding_name_label">Nama</string>
+    <string name="onboarding_name_error">Isi nama, maksimal %1$d karakter</string>
+    <string name="onboarding_email_label">Email</string>
+    <string name="onboarding_email_placeholder">nama@email.com</string>
+    <string name="onboarding_email_error">Format email belum benar</string>
+    <string name="onboarding_submit">Mulai</string>
+    <string name="illustration_note_1">Jemput Kiara jam 3 sore ya.</string>
+    <string name="illustration_note_2">Semangat hari ini!</string>
+    <string name="illustration_note_3">Galon habis, pesan 2</string>
+
+    <!-- Mulai: buat / gabung grup -->
+    <string name="start_greeting">Halo, %1$s</string>
+    <string name="start_headline">Mulai dengan orang terdekatmu</string>
+    <string name="start_body">Buat grup baru, atau gabung pakai kode dari keluarga dan temanmu.</string>
+    <string name="start_create_title">Buat grup baru</string>
+    <string name="start_create_body">Beri nama grupnya, lalu bagikan kode undangan.</string>
+    <string name="start_join_title">Gabung dengan kode</string>
+    <string name="start_join_body">Masukkan %1$d karakter kode undangan.</string>
+    <string name="start_join_action">Gabung</string>
+    <string name="create_group_title">Nama grup</string>
+    <string name="create_group_placeholder">Mis. Rumah, Kita Berdua</string>
+    <string name="create_group_error">Isi nama grup, maksimal %1$d karakter</string>
+    <string name="create_group_confirm">Buat</string>
+
+    <!-- Beranda -->
+    <string name="home_add_group">Buat atau gabung grup</string>
+    <string name="home_invite_action">Undang</string>
+    <string name="home_notes_title">Catatan</string>
+    <string name="home_notes_empty_title">Belum ada catatan</string>
+    <string name="home_notes_empty_body">Catatan di grup ini akan tampil di sini.</string>
+    <plurals name="home_member_count">
+        <item quantity="one">%d anggota</item>
+        <item quantity="other">%d anggota</item>
+    </plurals>
+
+    <!-- Undangan -->
+    <string name="invite_title">Kode undangan</string>
+    <string name="invite_expired">Kode sudah kedaluwarsa</string>
+    <string name="invite_unavailable">Grup ini sedang tidak menerima undangan.</string>
+    <string name="invite_share">Bagikan</string>
+    <string name="invite_share_chooser">Bagikan kode undangan</string>
+    <string name="invite_share_text">Gabung ke grup \"%1$s\" di jOURnal pakai kode %2$s</string>
+    <plurals name="invite_days_left">
+        <item quantity="one">Berlaku %d hari lagi</item>
+        <item quantity="other">Berlaku %d hari lagi</item>
+    </plurals>
+
+    <!-- Error -->
+    <string name="error_network">Tidak ada koneksi internet. Coba lagi.</string>
+    <string name="error_profile_required">Lengkapi profil dulu.</string>
+    <string name="error_invite_not_found">Kode tidak ditemukan. Cek lagi ya.</string>
+    <string name="error_invite_expired">Kode ini sudah kedaluwarsa. Minta kode baru ke pemilik grup.</string>
+    <string name="error_group_full">Grup sudah penuh (maksimal 10 anggota).</string>
+    <string name="error_already_member">Kamu sudah jadi anggota grup ini.</string>
+    <string name="error_not_owner">Hanya pemilik grup yang bisa melakukannya.</string>
+    <string name="error_unknown">Terjadi kesalahan. Coba lagi.</string>
 </resources>
