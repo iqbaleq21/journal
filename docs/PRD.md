@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Nama** | **jOURnal**: "OUR" ditulis kapital untuk menekankan catatan bersama |
-| **Status** | v0.4, belum ada kode |
+| **Status** | v0.4, M0–M1 selesai |
 | **Tanggal** | 2026-10-18 |
 | **Platform** | Android saja |
 | **Package ID** | `com.iqbal.journal` |
@@ -287,15 +287,15 @@ select cron.schedule('purge-deleted-notes', '0 3 * * *',
 
 ## 10. Rencana Rilis (Milestone)
 
-| # | Milestone | Isi | Selesai jika |
-|---|---|---|---|
-| M0 | Setup | Project Android, Supabase project, Firebase (FCM), migrasi SQL + RLS + RPC | App kosong build, migrasi jalan |
-| M1 | Auth & Grup | US-1, US-2, US-3, US-10 | 3 akun bisa bergabung ke satu grup |
-| M2 | Catatan | US-4, US-5, US-6, Room + Realtime | Catatan muncul di semua HP anggota saat app terbuka |
-| M3 | Widget | US-7, US-9 | Widget menampilkan catatan pilihan dari Room; bisa diganti |
-| M4 | Push & Sinkron background | US-8, US-11, Edge Function, WorkManager | Widget HP lain update < 10 detik saat app tertutup |
-| M5 | Polish | US-12, US-13, US-14, state kosong/error, ikon | APK release ditandatangani & dibagikan |
-| M6 | Nice to have | US-15, US-16 | — |
+| # | Milestone | Isi | Selesai jika | Status |
+|---|---|---|---|---|
+| M0 | Setup | Project Android, Supabase project, Firebase (FCM), migrasi SQL + RLS + RPC | App kosong build, migrasi jalan | ✅ 2026-10-18 |
+| M1 | Auth & Grup | US-1, US-2, US-3, US-10 | 3 akun bisa bergabung ke satu grup | ✅ 2026-10-18 (diuji di emulator: 3 akun di satu grup) |
+| M2 | Catatan | US-4, US-5, US-6, Room + Realtime | Catatan muncul di semua HP anggota saat app terbuka | |
+| M3 | Widget | US-7, US-9 | Widget menampilkan catatan pilihan dari Room; bisa diganti | |
+| M4 | Push & Sinkron background | US-8, US-11, Edge Function, WorkManager | Widget HP lain update < 10 detik saat app tertutup | |
+| M5 | Polish | US-12, US-13, US-14, state kosong/error, ikon | APK release ditandatangani & dibagikan | |
+| M6 | Nice to have | US-15, US-16 | — | |
 
 ## 11. Risiko & Mitigasi
 
@@ -314,7 +314,7 @@ select cron.schedule('purge-deleted-notes', '0 3 * * *',
 
 | Nama | Lokasi | Commit? |
 |---|---|---|
-| `SUPABASE_URL`, `SUPABASE_ANON_KEY` | `local.properties` → `BuildConfig` | Tidak |
+| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | `.env` di root repo → `BuildConfig` | Tidak |
 | `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD` | `.env` di root repo (template: `.env.example`) | Tidak |
 | `google-services.json` | `app/` | Tidak |
 | `FCM_SERVICE_ACCOUNT_JSON`, `FCM_PROJECT_ID` | Supabase secrets | Tidak |

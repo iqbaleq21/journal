@@ -42,4 +42,5 @@ Konfigurasi app (`SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`) dibaca Gradle dari 
 ## Progres
 Status milestone dicatat di `docs/PRD.md` bagian 10.
 - **M0 (setup) ✅ selesai 2026-10-18**: project Android build bersih (Compose, Hilt, Supabase client, tema dari DESIGN.md); migrasi awal + 16 tes pgTAP lulus di lokal; migrasi sudah di-push ke cloud (project `anwqobtneghvjzfivqsg`, sudah di-link); anonymous sign-in aktif.
-- Berikutnya: **M1** (layar Kenalan + anonymous sign-in, buat/gabung grup).
+- **M1 (auth & grup) ✅ selesai 2026-10-18**: layar Kenalan (anonymous sign-in + profil), Mulai (buat grup / gabung dengan kode), Beranda dengan chip pemilih grup + lembar undangan; Room (`my_profile`, `groups`) + DataStore untuk grup terpilih. Diuji di emulator AVD `jadwal`: 3 akun bergabung ke satu grup, error kode salah/sudah anggota tampil.
+- Berikutnya: **M2** (catatan: tulis/edit/hapus, Room + Realtime).
