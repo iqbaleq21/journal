@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Nama** | **jOURnal**: "OUR" ditulis kapital untuk menekankan catatan bersama |
-| **Status** | v0.4, M0–M3 selesai |
+| **Status** | v0.4, M0–M4 selesai |
 | **Tanggal** | 2026-10-18 |
 | **Platform** | Android saja |
 | **Package ID** | `com.iqbal.journal` |
@@ -261,11 +261,11 @@ create index on notes (group_id, updated_at desc);
 | `rename_group(group_id uuid, name text)` | Hanya owner. |
 
 ### 8.3 Edge Function `notify-members`
-- Dipicu **Database Webhook** pada `insert` / `update` tabel `notes`.
+- Dipicu trigger `notes_notify_members` (`after insert or update` pada `notes`) yang memanggil fungsi lewat `pg_net`. URL fungsi dan secret webhook disimpan di **Vault** (`notify_members_url`, `notify_members_secret`), bukan di repo; fungsi memeriksa header `x-webhook-secret` dan di-deploy dengan `verify_jwt = false`.
 - Ambil semua `devices.fcm_token` milik anggota grup **selain penulis**.
 - Kirim FCM HTTP v1 **data message** priority `high`: `{ "type": "note_changed", "note_id": "...", "group_id": "...", "is_new": true|false }`.
 - Hapus token dari `devices` jika FCM membalas token tidak valid (`UNREGISTERED`).
-- Secret: `FCM_SERVICE_ACCOUNT_JSON`, `FCM_PROJECT_ID` (Supabase secrets).
+- Secret: `FCM_SERVICE_ACCOUNT_JSON`, `FCM_PROJECT_ID`, `NOTIFY_WEBHOOK_SECRET` (Supabase secrets; yang terakhir sama dengan isi Vault `notify_members_secret`).
 
 ### 8.4 Job Terjadwal (`pg_cron`)
 ```sql
@@ -293,7 +293,7 @@ select cron.schedule('purge-deleted-notes', '0 3 * * *',
 | M1 | Auth & Grup | US-1, US-2, US-3, US-10 | 3 akun bisa bergabung ke satu grup | ✅ 2026-10-18 (diuji di emulator: 3 akun di satu grup) |
 | M2 | Catatan | US-4, US-5, US-6, Room + Realtime | Catatan muncul di semua HP anggota saat app terbuka | ✅ 2026-10-18 (Realtime diuji: tambah/edit/hapus dari akun lain tampil < 2 detik). "Muat lebih banyak" (§5.6) belum dibuat. |
 | M3 | Widget | US-7, US-9 | Widget menampilkan catatan pilihan dari Room; bisa diganti | ✅ 2026-10-18 (pasang, Atur ulang, tap membuka catatan, state dihapus; update saat app terbuka). Update saat app tertutup menyusul di M4. |
-| M4 | Push & Sinkron background | US-8, US-11, Edge Function, WorkManager | Widget HP lain update < 10 detik saat app tertutup | |
+| M4 | Push & Sinkron background | US-8, US-11, Edge Function, WorkManager | Widget HP lain update < 10 detik saat app tertutup | ✅ 2026-10-18 (proses app dimatikan: widget berubah ±5 detik setelah edit; notifikasi catatan baru tampil) |
 | M5 | Polish | US-12, US-13, US-14, state kosong/error, ikon | APK release ditandatangani & dibagikan | |
 | M6 | Nice to have | US-15, US-16 | — | |
 
@@ -317,7 +317,7 @@ select cron.schedule('purge-deleted-notes', '0 3 * * *',
 | `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | `.env` di root repo → `BuildConfig` | Tidak |
 | `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD` | `.env` di root repo (template: `.env.example`) | Tidak |
 | `google-services.json` | `app/` | Tidak |
-| `FCM_SERVICE_ACCOUNT_JSON`, `FCM_PROJECT_ID` | Supabase secrets | Tidak |
+| `FCM_SERVICE_ACCOUNT_JSON`, `FCM_PROJECT_ID` | Supabase secrets; sumbernya `firebase-service-account.json` di root repo (izin 600, tertangkap `.gitignore`) | Tidak |
 | Keystore release | di luar repo | Tidak |
 
 ## 13. Struktur Repo (rencana)
