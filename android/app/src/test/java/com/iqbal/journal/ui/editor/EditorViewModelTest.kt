@@ -203,4 +203,19 @@ class EditorViewModelTest {
 
         assertEquals("", viewModel.uiState.value.items.single().text)
     }
+
+    @Test
+    fun `akses yang dibagikan atau dicabut selagi catatan dibuka langsung berlaku`() {
+        notes.notes.value = listOf(FakeNoteRepository.note(id = "n1", authorId = "ibu"))
+        val viewModel = viewModel(noteId = "n1")
+        assertFalse(viewModel.uiState.value.canEdit)
+
+        notes.notes.value = listOf(FakeNoteRepository.note(id = "n1", authorId = "ibu", shared = true))
+        assertTrue(viewModel.uiState.value.canEdit)
+
+        viewModel.onContentChange("diketik")
+        notes.notes.value = listOf(FakeNoteRepository.note(id = "n1", authorId = "ibu", shared = false))
+        assertFalse(viewModel.uiState.value.canEdit)
+        assertEquals("Galon habis", viewModel.uiState.value.content)
+    }
 }

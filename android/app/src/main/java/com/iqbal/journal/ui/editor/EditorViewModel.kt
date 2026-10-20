@@ -100,10 +100,11 @@ class EditorViewModel @Inject constructor(
                     return@collect
                 }
                 val isMine = note.authorId == me?.id
-                // Isian yang belum disimpan tidak ditimpa, kecuali akses berbagi dicabut selagi dibuka.
-                val keepTyped = (isMine || note.shared) && saved != null
+                val isFirstLoad = saved == null
                 saved = note
                 _uiState.update {
+                    // Isian yang belum disimpan tidak ditimpa selama masih boleh diedit.
+                    val keepTyped = !isFirstLoad && it.canEdit && (isMine || note.shared)
                     val typed = if (keepTyped) {
                         it
                     } else {
@@ -116,6 +117,8 @@ class EditorViewModel @Inject constructor(
                         )
                     }
                     typed.copy(
+                        // Hanya penulis yang mengatur akses; bagi anggota lain nilai server selalu berlaku.
+                        shared = if (isMine) typed.shared else note.shared,
                         isLoading = false,
                         isMine = isMine,
                         authorName = note.authorName,
