@@ -145,7 +145,7 @@ private fun NoteContent(state: NoteWidgetState.Showing, appWidgetId: Int) {
     ) {
         Row(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
             Text(
-                text = note.content,
+                text = note.previewText,
                 maxLines = if (size.height >= TallMinHeight) MAX_LINES_TALL else MAX_LINES_SHORT,
                 style = TextStyle(
                     color = InkColor,

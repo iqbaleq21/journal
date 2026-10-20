@@ -54,24 +54,30 @@ class NoteRemoteDataSource @Inject constructor(private val client: SupabaseClien
         .select { filter { isIn("id", noteIds.toList()) } }
         .decodeList()
 
-    suspend fun insert(noteId: String, groupId: String, content: String, color: String?): NoteDto = client
+    suspend fun insert(noteId: String, groupId: String, fields: NoteFieldsDto): NoteDto = client
         .from(Tables.NOTES)
         .insert(
-            NewNoteDto(id = noteId, groupId = groupId, authorId = currentUserId(), content = content, color = color)
+            NewNoteDto(
+                id = noteId,
+                groupId = groupId,
+                authorId = currentUserId(),
+                content = fields.content,
+                color = fields.color,
+                kind = fields.kind,
+                shared = fields.shared
+            )
         ) {
             select()
         }
         .decodeSingle()
 
-    suspend fun updateContent(noteId: String, content: String, color: String?): NoteDto = client.from(Tables.NOTES)
-        .update({
-            set("content", content)
-            set("color", color)
-        }) {
+    /** Null bila RLS menyaring catatannya (mis. akses berbagi dicabut penulis). */
+    suspend fun updateContent(noteId: String, fields: NoteFieldsDto): NoteDto? = client.from(Tables.NOTES)
+        .update(fields) {
             select()
             filter { eq("id", noteId) }
         }
-        .decodeSingle()
+        .decodeSingleOrNull()
 
     suspend fun softDelete(noteId: String, deletedAt: Instant) {
         client.from(Tables.NOTES).update({ set("deleted_at", deletedAt.toString()) }) {

@@ -13,7 +13,7 @@ import com.iqbal.journal.data.toDomain
 import com.iqbal.journal.data.toEntity
 import com.iqbal.journal.data.toKey
 import com.iqbal.journal.domain.model.Note
-import com.iqbal.journal.domain.model.NoteColor
+import com.iqbal.journal.domain.model.NoteDraft
 import com.iqbal.journal.domain.model.Outcome
 import com.iqbal.journal.domain.repository.NoteRepository
 import com.iqbal.journal.domain.validation.NoteRules
@@ -63,26 +63,30 @@ class NoteRepositoryImpl @Inject constructor(
     override suspend fun flushPending(): Boolean = outbox.flush()
 
     // Tulis/edit/hapus langsung ke cache (tampil di UI & widget), lalu dikirim lewat antrean; tetap jalan saat offline.
-    override suspend fun create(groupId: String, content: String, color: NoteColor): Outcome<Note> = outcomeOf {
+    override suspend fun create(groupId: String, draft: NoteDraft): Outcome<Note> = outcomeOf {
         val now = clock.millis()
         val note = NoteEntity(
             id = UUID.randomUUID().toString(),
             groupId = groupId,
             authorId = remote.currentUserId(),
-            content = NoteRules.normalizeContent(content),
-            color = color.toKey(),
+            content = NoteRules.normalizeContent(draft.content),
+            color = draft.color.toKey(),
+            kind = draft.kind.toKey(),
+            shared = draft.shared,
             createdAtEpochMillis = now,
             updatedAtEpochMillis = now
         )
         saveLocally(note, PendingOpType.Create)
     }
 
-    override suspend fun update(noteId: String, content: String, color: NoteColor): Outcome<Note> = outcomeOf {
+    override suspend fun update(noteId: String, draft: NoteDraft): Outcome<Note> = outcomeOf {
         val current = checkNotNull(noteDao.observeById(noteId).first()) { "Catatan $noteId tidak ada" }.note
         saveLocally(
             current.copy(
-                content = NoteRules.normalizeContent(content),
-                color = color.toKey(),
+                content = NoteRules.normalizeContent(draft.content),
+                color = draft.color.toKey(),
+                kind = draft.kind.toKey(),
+                shared = draft.shared,
                 updatedAtEpochMillis = clock.millis()
             ),
             PendingOpType.Update
@@ -137,7 +141,9 @@ class NoteRepositoryImpl @Inject constructor(
                 groupId = note.groupId,
                 type = type,
                 content = note.content,
-                color = note.color
+                color = note.color,
+                kind = note.kind,
+                shared = note.shared
             )
         )
         outbox.flush()

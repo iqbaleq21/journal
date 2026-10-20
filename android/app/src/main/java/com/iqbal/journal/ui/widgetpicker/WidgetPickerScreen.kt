@@ -152,7 +152,7 @@ private fun WidgetPreview(note: Note?, groupName: String, myUserId: String?) {
                 .padding(Spacing.medium)
         ) {
             Text(
-                note?.content ?: stringResource(R.string.widget_picker_preview_empty),
+                note?.previewText ?: stringResource(R.string.widget_picker_preview_empty),
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontFamily = MaterialTheme.typography.titleLarge.fontFamily
                 ),
@@ -241,7 +241,7 @@ private fun NoteList(
                 ChoiceRow(
                     isSelected = !followsLatest && note.id == selectedNoteId,
                     onClick = { onSelect(note.id) },
-                    title = note.content,
+                    title = note.previewText,
                     subtitle = stringResource(
                         R.string.widget_meta,
                         authorLabel(note, myUserId),

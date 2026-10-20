@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -24,9 +25,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -41,6 +46,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -48,6 +54,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.iqbal.journal.R
 import com.iqbal.journal.domain.model.NoteColor
+import com.iqbal.journal.domain.model.NoteKind
 import com.iqbal.journal.domain.validation.NoteRules
 import com.iqbal.journal.ui.common.messageRes
 import com.iqbal.journal.ui.common.relativeTimeText
@@ -67,6 +74,14 @@ fun EditorRoute(onDone: () -> Unit, onBack: () -> Unit, viewModel: EditorViewMod
         onBack = onBack,
         onContentChange = viewModel::onContentChange,
         onColorChange = viewModel::onColorChange,
+        onKindChange = viewModel::onKindChange,
+        onSharedChange = viewModel::onSharedChange,
+        checklist = ChecklistCallbacks(
+            onTextChange = viewModel::onItemTextChange,
+            onCheckedChange = viewModel::onItemCheckedChange,
+            onAdd = viewModel::onAddItem,
+            onRemove = viewModel::onRemoveItem
+        ),
         onSave = viewModel::onSave,
         onDeleteClick = viewModel::onDeleteClick,
         onDeleteDismiss = viewModel::onDeleteDismiss,
@@ -81,6 +96,9 @@ fun EditorScreen(
     onBack: () -> Unit,
     onContentChange: (String) -> Unit,
     onColorChange: (NoteColor) -> Unit,
+    onKindChange: (NoteKind) -> Unit,
+    onSharedChange: (Boolean) -> Unit,
+    checklist: ChecklistCallbacks,
     onSave: () -> Unit,
     onDeleteClick: () -> Unit,
     onDeleteDismiss: () -> Unit,
@@ -106,9 +124,18 @@ fun EditorScreen(
                 .padding(horizontal = Spacing.screen, vertical = Spacing.medium)
         ) {
             TopBar(state = state, onBack = onBack, onSave = onSave)
-            NoteEditorCard(state = state, onContentChange = onContentChange, modifier = Modifier.weight(1f))
-            if (state.canEdit) NoteColorPicker(selected = state.color, onSelect = onColorChange)
-            if (!state.isMine) {
+            NoteEditorCard(
+                state = state,
+                onContentChange = onContentChange,
+                checklist = checklist,
+                modifier = Modifier.weight(1f)
+            )
+            if (state.canEdit) {
+                NoteColorPicker(selected = state.color, onSelect = onColorChange)
+                KindSelector(selected = state.kind, onSelect = onKindChange)
+            }
+            if (state.isMine && !state.isLoading) ShareSwitch(shared = state.shared, onChange = onSharedChange)
+            if (!state.canEdit && !state.isLoading) {
                 Text(
                     stringResource(R.string.editor_read_only),
                     style = MaterialTheme.typography.bodyMedium,
@@ -165,12 +192,63 @@ private fun TopBar(state: EditorUiState, onBack: () -> Unit, onSave: () -> Unit)
     }
 }
 
+/** Aksi item checklist dari Editor, dikelompokkan agar daftar parameter layar tetap pendek. */
+data class ChecklistCallbacks(
+    val onTextChange: (index: Int, text: String) -> Unit,
+    val onCheckedChange: (index: Int, checked: Boolean) -> Unit,
+    val onAdd: () -> Unit,
+    val onRemove: (index: Int) -> Unit
+)
+
 @Composable
-private fun NoteEditorCard(state: EditorUiState, onContentChange: (String) -> Unit, modifier: Modifier = Modifier) {
+private fun KindSelector(selected: NoteKind, onSelect: (NoteKind) -> Unit) {
+    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+        NoteKind.entries.forEachIndexed { index, kind ->
+            SegmentedButton(
+                selected = kind == selected,
+                onClick = { onSelect(kind) },
+                shape = SegmentedButtonDefaults.itemShape(index, NoteKind.entries.size)
+            ) {
+                Text(
+                    stringResource(
+                        if (kind == NoteKind.Checklist) R.string.editor_kind_checklist else R.string.editor_kind_text
+                    )
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ShareSwitch(shared: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.toggleable(value = shared, role = Role.Switch, onValueChange = onChange)
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.editor_share), style = MaterialTheme.typography.titleSmall)
+            Text(
+                stringResource(R.string.editor_share_body),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        // Baris sudah toggleable; switch hanya penanda agar tidak terbaca dua kali oleh pembaca layar.
+        Switch(checked = shared, onCheckedChange = null)
+    }
+}
+
+@Composable
+private fun NoteEditorCard(
+    state: EditorUiState,
+    onContentChange: (String) -> Unit,
+    checklist: ChecklistCallbacks,
+    modifier: Modifier = Modifier
+) {
     val swatch = JournalTheme.noteColors.swatchFor(state.color)
     val focusRequester = remember { FocusRequester() }
     // Catatan baru langsung siap diketik.
-    LaunchedEffect(state.isNew) { if (state.isNew) focusRequester.requestFocus() }
+    LaunchedEffect(state.isNew) { if (state.isNew && state.kind == NoteKind.Text) focusRequester.requestFocus() }
 
     Surface(
         shape = MaterialTheme.shapes.extraLarge,
@@ -188,28 +266,45 @@ private fun NoteEditorCard(state: EditorUiState, onContentChange: (String) -> Un
                 style = MaterialTheme.typography.labelSmall,
                 color = swatch.onContainerMuted
             )
-            BasicTextField(
-                value = state.content,
-                onValueChange = onContentChange,
-                readOnly = !state.canEdit,
-                textStyle = MaterialTheme.typography.headlineMedium.copy(color = MaterialTheme.colorScheme.onSurface),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                decorationBox = { innerTextField ->
-                    if (state.content.isEmpty()) {
-                        Text(
-                            stringResource(R.string.editor_placeholder),
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = swatch.onContainerMuted
-                        )
-                    }
-                    innerTextField()
-                },
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .focusRequester(focusRequester)
-            )
+            if (state.kind == NoteKind.Checklist) {
+                ChecklistEditor(
+                    items = state.items,
+                    canEdit = state.canEdit,
+                    mutedColor = swatch.onContainerMuted,
+                    onTextChange = checklist.onTextChange,
+                    onCheckedChange = checklist.onCheckedChange,
+                    onAdd = checklist.onAdd,
+                    onRemove = checklist.onRemove,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                )
+            } else {
+                BasicTextField(
+                    value = state.content,
+                    onValueChange = onContentChange,
+                    readOnly = !state.canEdit,
+                    textStyle = MaterialTheme.typography.headlineMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurface
+                    ),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                    decorationBox = { innerTextField ->
+                        if (state.content.isEmpty()) {
+                            Text(
+                                stringResource(R.string.editor_placeholder),
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = swatch.onContainerMuted
+                            )
+                        }
+                        innerTextField()
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .focusRequester(focusRequester)
+                )
+            }
             if (state.showEmptyError) {
                 Text(
                     stringResource(R.string.editor_empty_error),
@@ -247,7 +342,7 @@ private fun EditorMeta(state: EditorUiState, swatch: NoteSwatch) {
         )
         if (state.canEdit) {
             Text(
-                stringResource(R.string.editor_counter, state.content.length, NoteRules.MAX_NOTE_LENGTH),
+                stringResource(R.string.editor_counter, state.body.length, NoteRules.MAX_NOTE_LENGTH),
                 style = MaterialTheme.typography.labelMedium,
                 color = swatch.onContainerMuted
             )
@@ -310,6 +405,9 @@ private fun EditorScreenPreview() {
             onBack = {},
             onContentChange = {},
             onColorChange = {},
+            onKindChange = {},
+            onSharedChange = {},
+            checklist = ChecklistCallbacks({ _, _ -> }, { _, _ -> }, {}, {}),
             onSave = {},
             onDeleteClick = {},
             onDeleteDismiss = {},

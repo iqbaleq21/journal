@@ -4,9 +4,12 @@ import com.iqbal.journal.domain.model.Group
 import com.iqbal.journal.domain.model.Member
 import com.iqbal.journal.domain.model.Note
 import com.iqbal.journal.domain.model.NoteColor
+import com.iqbal.journal.domain.model.NoteDraft
 import com.iqbal.journal.domain.model.Outcome
 import com.iqbal.journal.domain.model.Profile
+import com.iqbal.journal.domain.model.ThemeMode
 import com.iqbal.journal.domain.model.WidgetSelection
+import com.iqbal.journal.domain.repository.AppearanceRepository
 import com.iqbal.journal.domain.repository.GroupRepository
 import com.iqbal.journal.domain.repository.NoteRepository
 import com.iqbal.journal.domain.repository.ProfileRepository
@@ -137,21 +140,22 @@ class FakeNoteRepository : NoteRepository {
 
     override suspend fun flushPending(): Boolean = true
 
-    /** Warna yang dikirim pada create/update terakhir. */
-    var lastColor: NoteColor? = null
+    /** Isian yang dikirim pada create/update terakhir. */
+    var lastDraft: NoteDraft? = null
+    val lastColor: NoteColor? get() = lastDraft?.color
 
-    override suspend fun create(groupId: String, content: String, color: NoteColor): Outcome<Note> {
-        createCalls += groupId to content
-        lastColor = color
+    override suspend fun create(groupId: String, draft: NoteDraft): Outcome<Note> {
+        createCalls += groupId to draft.content
+        lastDraft = draft
         writeFailure?.let { return it }
-        return Outcome.Success(note(id = "new", groupId = groupId, content = content))
+        return Outcome.Success(note(id = "new", groupId = groupId, content = draft.content))
     }
 
-    override suspend fun update(noteId: String, content: String, color: NoteColor): Outcome<Note> {
-        updateCalls += noteId to content
-        lastColor = color
+    override suspend fun update(noteId: String, draft: NoteDraft): Outcome<Note> {
+        updateCalls += noteId to draft.content
+        lastDraft = draft
         writeFailure?.let { return it }
-        return Outcome.Success(note(id = noteId, content = content))
+        return Outcome.Success(note(id = noteId, content = draft.content))
     }
 
     override suspend fun delete(noteId: String): Outcome<Unit> {
@@ -167,17 +171,23 @@ class FakeNoteRepository : NoteRepository {
     }
 
     companion object {
-        fun note(id: String = "n1", groupId: String = "g1", authorId: String = "me", content: String = "Galon habis") =
-            Note(
-                id = id,
-                groupId = groupId,
-                authorId = authorId,
-                authorName = "Ayah",
-                content = content,
-                color = NoteColor.Plain,
-                createdAt = Instant.EPOCH,
-                updatedAt = Instant.EPOCH
-            )
+        fun note(
+            id: String = "n1",
+            groupId: String = "g1",
+            authorId: String = "me",
+            content: String = "Galon habis",
+            shared: Boolean = false
+        ) = Note(
+            id = id,
+            groupId = groupId,
+            authorId = authorId,
+            authorName = "Ayah",
+            content = content,
+            color = NoteColor.Plain,
+            shared = shared,
+            createdAt = Instant.EPOCH,
+            updatedAt = Instant.EPOCH
+        )
     }
 }
 
@@ -197,5 +207,13 @@ class FakeWidgetRepository : WidgetRepository {
 
     override suspend fun remove(appWidgetIds: List<Int>) {
         selections.value = selections.value - appWidgetIds.toSet()
+    }
+}
+
+class FakeAppearanceRepository : AppearanceRepository {
+    override val themeMode = MutableStateFlow(ThemeMode.System)
+
+    override suspend fun setThemeMode(mode: ThemeMode) {
+        themeMode.value = mode
     }
 }

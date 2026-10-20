@@ -58,8 +58,8 @@ fun NoteCard(note: Note, isMine: Boolean, isOnWidget: Boolean, onClick: () -> Un
         Column(Modifier.padding(Spacing.medium), verticalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
             if (isOnWidget) WidgetBadge()
             Text(
-                text = note.content,
-                style = if (note.content.length <= SHORT_NOTE_MAX_LENGTH) {
+                text = note.previewText,
+                style = if (note.previewText.length <= SHORT_NOTE_MAX_LENGTH) {
                     MaterialTheme.typography.headlineSmall
                 } else {
                     MaterialTheme.typography.bodyMedium

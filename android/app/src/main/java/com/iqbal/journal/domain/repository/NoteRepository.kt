@@ -1,7 +1,7 @@
 package com.iqbal.journal.domain.repository
 
 import com.iqbal.journal.domain.model.Note
-import com.iqbal.journal.domain.model.NoteColor
+import com.iqbal.journal.domain.model.NoteDraft
 import com.iqbal.journal.domain.model.Outcome
 import kotlinx.coroutines.flow.Flow
 
@@ -30,9 +30,10 @@ interface NoteRepository {
      */
     suspend fun flushPending(): Boolean
 
-    suspend fun create(groupId: String, content: String, color: NoteColor): Outcome<Note>
+    suspend fun create(groupId: String, draft: NoteDraft): Outcome<Note>
 
-    suspend fun update(noteId: String, content: String, color: NoteColor): Outcome<Note>
+    /** Penulis, atau anggota lain bila catatan dibagikan; hanya penulis yang boleh mengubah [NoteDraft.shared]. */
+    suspend fun update(noteId: String, draft: NoteDraft): Outcome<Note>
 
     /**
      * Soft delete agar penghapusan ikut tersinkron ke HP anggota lain.

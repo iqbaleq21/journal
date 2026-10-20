@@ -5,6 +5,17 @@ import java.time.Instant
 /** Warna latar catatan; nilainya disimpan sebagai kunci di kolom `notes.color`. */
 enum class NoteColor { Butter, Mint, Sky, Peach, Lilac, Plain }
 
+/** Bentuk isi catatan; nilainya disimpan sebagai kunci di kolom `notes.kind`. */
+enum class NoteKind { Text, Checklist }
+
+/** Bagian catatan yang bisa diubah lewat Editor. */
+data class NoteDraft(
+    val content: String,
+    val color: NoteColor = NoteColor.Plain,
+    val kind: NoteKind = NoteKind.Text,
+    val shared: Boolean = false
+)
+
 data class Note(
     val id: String,
     val groupId: String,
@@ -16,5 +27,11 @@ data class Note(
     val createdAt: Instant,
     val updatedAt: Instant,
     /** Perubahan di HP ini yang belum terkirim ke server (mis. sedang offline). */
-    val isPending: Boolean = false
-)
+    val isPending: Boolean = false,
+    val kind: NoteKind = NoteKind.Text,
+    /** Penulis mengizinkan anggota lain mengedit (tidak menghapus) catatan ini. */
+    val shared: Boolean = false
+) {
+    /** Isi untuk ditampilkan apa adanya (kartu, widget, notifikasi). */
+    val previewText: String get() = if (kind == NoteKind.Checklist) Checklist.preview(content) else content
+}

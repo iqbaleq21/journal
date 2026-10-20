@@ -76,6 +76,13 @@
     <string name="editor_by">Ditulis oleh %1$s · %2$s</string>
     <string name="editor_counter">%1$d/%2$d</string>
     <string name="editor_empty_error">Catatan belum diisi.</string>
+    <string name="editor_kind_text">Teks</string>
+    <string name="editor_kind_checklist">Checklist</string>
+    <string name="editor_checklist_add">Tambah item</string>
+    <string name="editor_checklist_placeholder">Item baru</string>
+    <string name="editor_checklist_remove">Hapus item</string>
+    <string name="editor_share">Anggota lain boleh mengedit</string>
+    <string name="editor_share_body">Mereka bisa mengubah isi dan mencentang item, tapi tidak bisa menghapus catatan.</string>
     <string name="editor_read_only">Hanya penulis yang bisa mengubah catatan ini.</string>
     <string name="editor_delete">Hapus catatan</string>
     <string name="editor_delete_title">Hapus catatan ini?</string>
@@ -86,6 +93,10 @@
     <string name="settings_title">Pengaturan</string>
     <string name="settings_profile">Profil</string>
     <string name="settings_identity_warning">Akunmu terikat ke HP ini. Jika jOURnal dihapus, datanya dibersihkan, atau kamu ganti HP, kamu harus bergabung lagi ke grup dan catatan lamamu tidak bisa diedit lagi.</string>
+    <string name="settings_theme">Tampilan</string>
+    <string name="settings_theme_system">Ikuti sistem</string>
+    <string name="settings_theme_light">Terang</string>
+    <string name="settings_theme_dark">Gelap</string>
     <string name="settings_notifications">Notifikasi catatan baru</string>
     <string name="settings_notifications_body">Widget tetap diperbarui meski notifikasi grup dimatikan.</string>
     <string name="settings_battery">Optimasi baterai</string>

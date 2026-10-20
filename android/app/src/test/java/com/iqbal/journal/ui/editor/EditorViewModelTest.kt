@@ -1,8 +1,10 @@
 package com.iqbal.journal.ui.editor
 
 import androidx.lifecycle.SavedStateHandle
+import com.iqbal.journal.domain.model.ChecklistItem
 import com.iqbal.journal.domain.model.JournalError
 import com.iqbal.journal.domain.model.NoteColor
+import com.iqbal.journal.domain.model.NoteKind
 import com.iqbal.journal.domain.model.Outcome
 import com.iqbal.journal.domain.model.Profile
 import com.iqbal.journal.domain.validation.NoteRules
@@ -159,5 +161,46 @@ class EditorViewModelTest {
 
         notes.notes.value = emptyList()
         assertTrue(viewModel.uiState.value.isDone)
+    }
+
+    @Test
+    fun `catatan orang lain yang dibagikan bisa diedit tapi tidak bisa dihapus atau diatur aksesnya`() {
+        notes.notes.value = listOf(FakeNoteRepository.note(id = "n1", authorId = "ibu", shared = true))
+        val viewModel = viewModel(noteId = "n1")
+
+        viewModel.onSharedChange(false)
+        viewModel.onContentChange("Galon sudah dipesan")
+        viewModel.onSave()
+
+        assertFalse(viewModel.uiState.value.canDelete)
+        assertEquals(listOf("n1" to "Galon sudah dipesan"), notes.updateCalls)
+        assertEquals(true, notes.lastDraft?.shared)
+    }
+
+    @Test
+    fun `ganti ke checklist mengubah tiap baris jadi item dan disimpan dengan penanda`() {
+        val viewModel = viewModel()
+        viewModel.onContentChange("Susu\nRoti")
+
+        viewModel.onKindChange(NoteKind.Checklist)
+        viewModel.onItemCheckedChange(0, true)
+        viewModel.onSave()
+
+        assertEquals(
+            listOf(ChecklistItem("Susu", checked = true), ChecklistItem("Roti")),
+            viewModel.uiState.value.items
+        )
+        assertEquals(NoteKind.Checklist, notes.lastDraft?.kind)
+        assertEquals("[x] Susu\n[ ] Roti", notes.lastDraft?.content)
+    }
+
+    @Test
+    fun `item checklist tidak bisa membuat isi melebihi batas panjang`() {
+        val viewModel = viewModel()
+        viewModel.onKindChange(NoteKind.Checklist)
+
+        viewModel.onItemTextChange(0, "a".repeat(NoteRules.MAX_NOTE_LENGTH))
+
+        assertEquals("", viewModel.uiState.value.items.single().text)
     }
 }

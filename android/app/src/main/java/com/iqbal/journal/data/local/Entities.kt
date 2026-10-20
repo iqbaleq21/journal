@@ -45,6 +45,9 @@ data class NoteEntity(
     val content: String,
     /** Kunci warna dari database (`butter`, `mint`, …); null = warna bawaan. */
     val color: String?,
+    /** Kunci bentuk isi dari database (`text`, `checklist`). */
+    @ColumnInfo(defaultValue = "text") val kind: String = NOTE_KIND_TEXT,
+    @ColumnInfo(defaultValue = "0") val shared: Boolean = false,
     @ColumnInfo(name = "created_at") val createdAtEpochMillis: Long,
     @ColumnInfo(name = "updated_at") val updatedAtEpochMillis: Long
 )
@@ -59,6 +62,8 @@ data class NoteWithAuthor(
     @ColumnInfo(name = "is_pending") val isPending: Boolean = false
 )
 
+const val NOTE_KIND_TEXT = "text"
+
 enum class PendingOpType { Create, Update, Delete }
 
 /** Perubahan catatan yang dibuat di HP ini dan belum terkirim; dikirim berurutan sesuai [id]. */
@@ -71,7 +76,9 @@ data class PendingOpEntity(
     /** Isi catatan untuk Create/Update; null untuk Delete. */
     val content: String?,
     /** Kunci warna untuk Create/Update; null = warna bawaan. */
-    @ColumnInfo(defaultValue = "NULL") val color: String? = null
+    @ColumnInfo(defaultValue = "NULL") val color: String? = null,
+    @ColumnInfo(defaultValue = "text") val kind: String = NOTE_KIND_TEXT,
+    @ColumnInfo(defaultValue = "0") val shared: Boolean = false
 )
 
 /** Pilihan catatan per widget. Catatan di sini tidak ikut dibuang oleh batas cache per grup. */

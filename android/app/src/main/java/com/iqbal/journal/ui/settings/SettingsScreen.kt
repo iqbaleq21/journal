@@ -24,6 +24,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -50,6 +53,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.iqbal.journal.BuildConfig
 import com.iqbal.journal.R
 import com.iqbal.journal.domain.model.Group
+import com.iqbal.journal.domain.model.ThemeMode
 import com.iqbal.journal.domain.validation.ProfileRules
 import com.iqbal.journal.ui.common.messageRes
 import com.iqbal.journal.ui.theme.JournalTheme
@@ -74,6 +78,7 @@ fun SettingsRoute(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMod
         onEmailChange = viewModel::onEmailChange,
         onSaveProfile = viewModel::onSaveProfile,
         onNotifyChange = viewModel::onNotifyChange,
+        onThemeModeChange = viewModel::onThemeModeChange,
         onOpenBatterySettings = { context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) },
         onErrorShown = viewModel::onErrorShown
     )
@@ -91,6 +96,7 @@ fun SettingsScreen(
     onEmailChange: (String) -> Unit,
     onSaveProfile: () -> Unit,
     onNotifyChange: (groupId: String, enabled: Boolean) -> Unit,
+    onThemeModeChange: (ThemeMode) -> Unit,
     onOpenBatterySettings: () -> Unit,
     onErrorShown: () -> Unit
 ) {
@@ -123,6 +129,7 @@ fun SettingsScreen(
                 Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineLarge)
             }
             ProfileSection(state, onNameChange, onEmailChange, onSaveProfile)
+            ThemeSection(state.themeMode, onThemeModeChange)
             NotificationSection(state.groups, state.pendingNotifyGroupIds, onNotifyChange)
             BatterySection(isBatteryUnrestricted, onOpenBatterySettings)
             Text(
@@ -246,6 +253,31 @@ private fun NotificationSection(
 }
 
 @Composable
+private fun ThemeSection(selected: ThemeMode, onSelect: (ThemeMode) -> Unit) {
+    Section(stringResource(R.string.settings_theme)) {
+        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+            ThemeMode.entries.forEachIndexed { index, mode ->
+                SegmentedButton(
+                    selected = mode == selected,
+                    onClick = { onSelect(mode) },
+                    shape = SegmentedButtonDefaults.itemShape(index, ThemeMode.entries.size)
+                ) {
+                    Text(
+                        stringResource(
+                            when (mode) {
+                                ThemeMode.System -> R.string.settings_theme_system
+                                ThemeMode.Light -> R.string.settings_theme_light
+                                ThemeMode.Dark -> R.string.settings_theme_dark
+                            }
+                        )
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun BatterySection(isUnrestricted: Boolean, onOpenSettings: () -> Unit) {
     Section(stringResource(R.string.settings_battery)) {
         Text(
@@ -292,6 +324,7 @@ private fun SettingsScreenPreview() {
             onEmailChange = {},
             onSaveProfile = {},
             onNotifyChange = { _, _ -> },
+            onThemeModeChange = {},
             onOpenBatterySettings = {},
             onErrorShown = {}
         )

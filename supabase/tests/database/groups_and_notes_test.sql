@@ -1,7 +1,7 @@
 -- Tes RLS & RPC grup/catatan. Jalankan: supabase test db
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(16);
+select plan(20);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'a@test.dev'),
@@ -49,6 +49,14 @@ select throws_ok(
   format($$ insert into public.notes (group_id, author_id, content) values (%L, '00000000-0000-0000-0000-00000000000b', 'palsu') $$,
          (select group_id from invite)),
   '42501', null, 'tidak bisa menulis atas nama orang lain');
+
+-- A membagikan catatannya: B boleh mengedit, tapi tidak boleh menghapus atau mencabut akses
+update public.notes set shared = true;
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
+select lives_ok($$ update public.notes set content = 'diubah B', kind = 'checklist' $$, 'catatan yang dibagikan bisa diedit anggota');
+select is((select content from public.notes), 'diubah B', 'hasil edit anggota tersimpan');
+select throws_ok($$ update public.notes set deleted_at = now() $$, 'NOTE_AUTHOR_ONLY', 'hanya penulis yang bisa menghapus');
+select throws_ok($$ update public.notes set shared = false $$, 'NOTE_AUTHOR_ONLY', 'hanya penulis yang bisa mengatur akses');
 
 -- User C (bukan anggota) tidak melihat apa pun
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c');

@@ -5,6 +5,7 @@ import com.iqbal.journal.data.local.PendingOpDao
 import com.iqbal.journal.data.local.PendingOpEntity
 import com.iqbal.journal.data.local.PendingOpType
 import com.iqbal.journal.data.remote.NoteDto
+import com.iqbal.journal.data.remote.NoteFieldsDto
 import com.iqbal.journal.data.remote.NoteRemoteDataSource
 import com.iqbal.journal.data.toEntity
 import io.github.jan.supabase.exceptions.RestException
@@ -56,6 +57,11 @@ class NoteOutbox @Inject constructor(
                 pendingOpDao.delete(op.id)
                 resync(op.noteId)
             } catch (
+                @Suppress("SwallowedException") e: NoteRejectedException
+            ) {
+                pendingOpDao.delete(op.id)
+                resync(op.noteId)
+            } catch (
                 @Suppress("TooGenericExceptionCaught", "SwallowedException") e: Exception
             ) {
                 // Gagal jaringan: urutan harus dijaga, jadi berhenti dan coba lagi nanti.
@@ -68,9 +74,9 @@ class NoteOutbox @Inject constructor(
 
     private suspend fun send(op: PendingOpEntity) {
         val saved: NoteDto? = when (op.type) {
-            PendingOpType.Create -> remote.insert(op.noteId, op.groupId, checkNotNull(op.content), op.color)
+            PendingOpType.Create -> remote.insert(op.noteId, op.groupId, op.fields())
 
-            PendingOpType.Update -> remote.updateContent(op.noteId, checkNotNull(op.content), op.color)
+            PendingOpType.Update -> remote.updateContent(op.noteId, op.fields()) ?: throw NoteRejectedException()
 
             PendingOpType.Delete -> {
                 remote.softDelete(op.noteId, clock.instant())
@@ -82,9 +88,14 @@ class NoteOutbox @Inject constructor(
         if (saved != null && !pendingOpDao.hasPending(op.noteId)) noteDao.upsert(saved.toEntity())
     }
 
+    private fun PendingOpEntity.fields() = NoteFieldsDto(checkNotNull(content), color, kind, shared)
+
     private suspend fun resync(noteId: String) {
         if (pendingOpDao.hasPending(noteId)) return
         val note = remote.fetchByIds(listOf(noteId)).firstOrNull()
         if (note == null || note.deletedAt != null) noteDao.deleteById(noteId) else noteDao.upsert(note.toEntity())
     }
 }
+
+/** Update tidak mengenai baris mana pun: RLS menolaknya tanpa error (mis. akses berbagi sudah dicabut). */
+private class NoteRejectedException : Exception()

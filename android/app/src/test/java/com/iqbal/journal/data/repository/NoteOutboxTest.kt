@@ -5,6 +5,7 @@ import com.iqbal.journal.data.local.PendingOpDao
 import com.iqbal.journal.data.local.PendingOpEntity
 import com.iqbal.journal.data.local.PendingOpType
 import com.iqbal.journal.data.remote.NoteDto
+import com.iqbal.journal.data.remote.NoteFieldsDto
 import com.iqbal.journal.data.remote.NoteRemoteDataSource
 import com.iqbal.journal.data.toEntity
 import io.github.jan.supabase.exceptions.RestException
@@ -52,8 +53,8 @@ class NoteOutboxTest {
     @Test
     fun `antrean dikirim berurutan dan versi server disimpan setelah operasi terakhir`() = runTest {
         queue += listOf(op(1, "n1", PendingOpType.Create, "awal", "mint"), op(2, "n1", PendingOpType.Update, "akhir"))
-        coEvery { remote.insert("n1", "g1", "awal", "mint") } returns dto("n1", "awal")
-        coEvery { remote.updateContent("n1", "akhir", null) } returns dto("n1", "akhir")
+        coEvery { remote.insert("n1", "g1", NoteFieldsDto("awal", "mint", "text", false)) } returns dto("n1", "awal")
+        coEvery { remote.updateContent("n1", NoteFieldsDto("akhir", null, "text", false)) } returns dto("n1", "akhir")
 
         assertTrue(outbox.flush())
 
@@ -66,7 +67,7 @@ class NoteOutboxTest {
     @Test
     fun `gagal jaringan menghentikan pengiriman dan menjadwalkan ulang tanpa membuang antrean`() = runTest {
         queue += listOf(op(1, "n1", PendingOpType.Create), op(2, "n2", PendingOpType.Delete, null))
-        coEvery { remote.insert(any(), any(), any(), any()) } throws IOException("offline")
+        coEvery { remote.insert(any(), any(), any()) } throws IOException("offline")
 
         assertFalse(outbox.flush())
 
@@ -78,7 +79,20 @@ class NoteOutboxTest {
     @Test
     fun `ditolak server dibuang lalu cache memakai versi server`() = runTest {
         queue += op(1, "n1", PendingOpType.Update, "ditolak")
-        coEvery { remote.updateContent("n1", "ditolak", null) } throws mockk<RestException>(relaxed = true)
+        coEvery { remote.updateContent("n1", NoteFieldsDto("ditolak", null, "text", false)) } throws
+            mockk<RestException>(relaxed = true)
+        coEvery { remote.fetchByIds(listOf("n1")) } returns listOf(dto("n1", "versi server"))
+
+        assertTrue(outbox.flush())
+
+        assertTrue(queue.isEmpty())
+        coVerify { noteDao.upsert(dto("n1", "versi server").toEntity()) }
+    }
+
+    @Test
+    fun `update yang tidak mengenai baris (akses berbagi dicabut) dibuang, bukan diulang terus`() = runTest {
+        queue += op(1, "n1", PendingOpType.Update, "telat")
+        coEvery { remote.updateContent("n1", NoteFieldsDto("telat", null, "text", false)) } returns null
         coEvery { remote.fetchByIds(listOf("n1")) } returns listOf(dto("n1", "versi server"))
 
         assertTrue(outbox.flush())

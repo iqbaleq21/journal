@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Nama** | **jOURnal**: "OUR" ditulis kapital untuk menekankan catatan bersama |
-| **Status** | v0.5, M0–M6 selesai |
-| **Tanggal** | 2026-10-18 |
+| **Status** | v0.6, M0–M7 selesai |
+| **Tanggal** | 2026-10-20 |
 | **Platform** | Android saja |
 | **Package ID** | `com.iqbal.journal` |
 | **Pemilik** | Iqbal |
@@ -12,6 +12,7 @@
 Dokumen ini adalah sumber kebenaran untuk scope dan arsitektur. Kalau implementasi menyimpang dari dokumen ini, perbarui dokumen ini dulu.
 
 **Riwayat perubahan**
+- v0.6: Catatan mode checklist (US-17), berbagi akses edit per catatan (US-18), dan pilihan tema terang/gelap di Pengaturan (US-19).
 - v0.5: Tidak ada logout di Pengaturan: akun anonim yang di-logout tidak bisa dipulihkan. Diganti peringatan bahwa identitas terikat ke HP ini (§5.1, §9).
 - v0.4: Login Google dihapus. Diganti profil sederhana (**nama + email**) di atas **Supabase Anonymous Sign-In** (§5.1).
 - v0.3: Nama **jOURnal**. Catatan sendiri boleh dipilih di widget. Ditambah aturan retensi data (§5.6).
@@ -45,7 +46,7 @@ Aplikasi catatan untuk **sekelompok kecil orang yang saling terhubung** (pasanga
 - **Pengguna**: orang yang mengisi nama & email di HP-nya. Identitasnya terikat ke instalasi aplikasi (§5.1).
 - **Grup**: kumpulan **2–10 anggota** yang berbagi catatan. Satu pengguna bisa ikut **beberapa grup** (mis. grup "Rumah" dan grup "Kita Berdua").
 - **Pemilik grup (owner)**: pembuat grup. Bisa mengganti nama grup, membuat ulang kode undangan, dan mengeluarkan anggota.
-- **Catatan**: teks milik satu grup, ditulis oleh satu anggota.
+- **Catatan**: teks atau checklist milik satu grup, ditulis oleh satu anggota. Penulis bisa mengizinkan anggota lain mengeditnya.
 - **Widget**: setiap widget yang dipasang menampilkan satu catatan yang dipilih. Pengguna bisa memasang beberapa widget dengan catatan berbeda.
 
 ## 4. User Stories
@@ -68,6 +69,9 @@ Aplikasi catatan untuk **sekelompok kecil orang yang saling terhubung** (pasanga
 | US-14 | (owner) mengeluarkan anggota, mengganti nama grup, membuat ulang kode undangan | P1 |
 | US-15 | memilih warna latar catatan (ikut tampil di widget) | P2 |
 | US-16 | mode widget "catatan terbaru di grup" (otomatis berganti) | P2 |
+| US-17 | menulis catatan sebagai checklist yang bisa dicentang, bukan hanya teks bebas | P2 |
+| US-18 | mengizinkan anggota lain mengedit catatan saya, dan mencabutnya lagi | P2 |
+| US-19 | memilih tema terang, gelap, atau ikut sistem | P2 |
 
 ## 5. Kebutuhan Fungsional
 
@@ -90,7 +94,9 @@ Aplikasi catatan untuk **sekelompok kecil orang yang saling terhubung** (pasanga
 
 ### 5.3 Catatan
 - Isi: teks polos, maks **500 karakter**.
-- Siapa pun di grup bisa membaca. Hanya **penulis** yang bisa mengedit / menghapus.
+- Mode (`notes.kind`): **teks** atau **checklist** (US-17). Checklist disimpan di `content` sebagai teks, satu item per baris (`[ ] item` / `[x] item`), jadi batas 500 karakter termasuk penandanya. Mengganti mode membawa isinya: tiap baris jadi item, atau sebaliknya. Widget, kartu, dan notifikasi menampilkan ☐/☑; centang hanya lewat app.
+- Siapa pun di grup bisa membaca. Hanya **penulis** yang bisa menghapus.
+- Berbagi akses (US-18): penulis menyalakan "Anggota lain boleh mengedit" (`notes.shared`) per catatan. Jika aktif, semua anggota grup bisa mengubah isi, warna, mode, dan centang. Menghapus dan mengatur akses tetap hak penulis (dijaga trigger `NOTE_AUTHOR_ONLY`). Edit bersamaan: yang terakhir menang. Edit offline yang tiba setelah akses dicabut ditolak dan diganti versi server.
 - Hapus = soft delete (`deleted_at`) agar penghapusan ikut tersinkron ke HP lain.
 - Daftar catatan per grup, terbaru di atas, dengan nama & foto penulis.
 
@@ -238,6 +244,8 @@ create table notes (
   author_id   uuid not null references auth.users,
   content     text not null check (char_length(content) between 1 and 500),
   color       text,                             -- P2
+  kind        text not null default 'text',     -- 'text' | 'checklist'
+  shared      boolean not null default false,   -- anggota lain boleh mengedit
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now(),
   deleted_at  timestamptz
@@ -251,7 +259,7 @@ create index on notes (group_id, updated_at desc);
 - `devices`: hanya baris milik sendiri (insert / update / delete).
 - `groups`: `select` jika anggota; perubahan hanya via RPC.
 - `group_members`: `select` jika anggota grup tsb; `update` kolom `notify` milik sendiri; insert/delete hanya via RPC.
-- `notes`: `select` jika `is_member(group_id)` dan grup belum diarsip; `insert` jika `author_id = auth.uid()` dan anggota; `update` hanya jika `author_id = auth.uid()`.
+- `notes`: `select` jika `is_member(group_id)` dan grup belum diarsip; `insert` jika `author_id = auth.uid()` dan anggota; `update` jika `author_id = auth.uid()` atau (`shared` dan anggota). Trigger menolak non-penulis yang mengubah `shared` atau `deleted_at`.
 
 ### 8.2 Fungsi RPC (`security definer`)
 | Fungsi | Perilaku |
@@ -265,7 +273,7 @@ create index on notes (group_id, updated_at desc);
 
 ### 8.3 Edge Function `notify-members`
 - Dipicu trigger `notes_notify_members` (`after insert or update` pada `notes`) yang memanggil fungsi lewat `pg_net`. URL fungsi dan secret webhook disimpan di **Vault** (`notify_members_url`, `notify_members_secret`), bukan di repo; fungsi memeriksa header `x-webhook-secret` dan di-deploy dengan `verify_jwt = false`.
-- Ambil semua `devices.fcm_token` milik anggota grup **selain penulis**.
+- Ambil semua `devices.fcm_token` milik anggota grup **selain pengubah** (field `author_id` di payload berisi `auth.uid()` pengubah, agar penulis ikut dikabari saat catatannya diedit anggota lain).
 - Kirim FCM HTTP v1 **data message** priority `high`: `{ "type": "note_changed", "note_id": "...", "group_id": "...", "is_new": true|false }`.
 - Hapus token dari `devices` jika FCM membalas token tidak valid (`UNREGISTERED`).
 - Secret: `FCM_SERVICE_ACCOUNT_JSON`, `FCM_PROJECT_ID`, `NOTIFY_WEBHOOK_SECRET` (Supabase secrets; yang terakhir sama dengan isi Vault `notify_members_secret`).
@@ -284,7 +292,7 @@ select cron.schedule('purge-deleted-notes', '0 3 * * *',
 3. **Beranda**: pemilih grup di atas (dropdown / tab), daftar catatan grup, FAB "Tulis".
 4. **Editor**: textarea, counter 0/500, simpan / hapus.
 5. **Detail grup**: nama, daftar anggota, kode undangan + share, keluar grup; aksi owner.
-6. **Pengaturan**: ubah nama & email, notifikasi per grup, tips optimasi baterai, peringatan identitas terikat ke HP ini. Tanpa logout (lihat riwayat v0.5).
+6. **Pengaturan**: ubah nama & email, tema (ikut sistem / terang / gelap; widget tetap mengikuti tema sistem), notifikasi per grup, tips optimasi baterai, peringatan identitas terikat ke HP ini. Tanpa logout (lihat riwayat v0.5).
 7. **Konfigurasi widget**: pilih grup → pilih catatan.
 8. **Widget**: satu catatan terpilih.
 
@@ -299,6 +307,7 @@ select cron.schedule('purge-deleted-notes', '0 3 * * *',
 | M4 | Push & Sinkron background | US-8, US-11, Edge Function, WorkManager | Widget HP lain update < 10 detik saat app tertutup | ✅ 2026-10-18 (proses app dimatikan: widget berubah ±5 detik setelah edit; notifikasi catatan baru tampil) |
 | M5 | Polish | US-12, US-13, US-14, state kosong/error, ikon | APK release ditandatangani & dibagikan | ✅ 2026-10-18 (APK release 4,1 MB, R8 aktif, diuji di emulator: Kenalan, gabung, tulis, Realtime, push saat app mati). Membagikan APK ke anggota dilakukan pemilik. |
 | M6 | Nice to have | US-15, US-16 | — | ✅ 2026-10-18 (warna tersimpan di server & widget; widget mode "terbaru" berganti ±4 dtk saat app tertutup) |
+| M7 | Checklist, berbagi, tema | US-17, US-18, US-19 | — | ✅ 2026-10-20 (unit test & tes SQL lulus) |
 
 ## 11. Risiko & Mitigasi
 
@@ -309,7 +318,7 @@ select cron.schedule('purge-deleted-notes', '0 3 * * *',
 | Token FCM berubah / HP ganti | Tabel `devices`; upsert token di `onNewToken` & saat app dibuka; hapus token invalid. |
 | Identitas hilang saat uninstall / hapus data / ganti HP (akun anonim) | Peringatan di Pengaturan; v2: tautkan email terverifikasi (§5.1). |
 | Penyalahgunaan anonymous sign-in (bot membuat akun) | Rate limit bawaan Supabase; opsional CAPTCHA jika app disebar luas. |
-| Konflik edit | Hanya penulis yang bisa mengedit catatannya → konflik praktis tidak terjadi; last-write-wins via `updated_at`. |
+| Konflik edit | Hanya penulis, atau anggota pada catatan yang dibagikan, yang bisa mengedit; konflik hanya mungkin di catatan yang dibagikan dan diselesaikan last-write-wins. |
 | Catatan yang ditampilkan widget dihapus | State khusus di widget + ajakan memilih catatan lain. |
 | Kebocoran secret | Lihat §12. |
 

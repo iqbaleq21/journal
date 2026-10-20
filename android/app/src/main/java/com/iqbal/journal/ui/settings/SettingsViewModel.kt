@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.iqbal.journal.domain.model.Group
 import com.iqbal.journal.domain.model.JournalError
 import com.iqbal.journal.domain.model.Outcome
+import com.iqbal.journal.domain.model.ThemeMode
+import com.iqbal.journal.domain.repository.AppearanceRepository
 import com.iqbal.journal.domain.repository.GroupRepository
 import com.iqbal.journal.domain.repository.ProfileRepository
 import com.iqbal.journal.domain.validation.ProfileRules
@@ -31,6 +33,7 @@ data class SettingsUiState(
     val groups: List<Group> = emptyList(),
     /** Grup yang pengaturan notifikasinya sedang dikirim. */
     val pendingNotifyGroupIds: Set<String> = emptySet(),
+    val themeMode: ThemeMode = ThemeMode.System,
     val error: JournalError? = null
 ) {
     val showNameError: Boolean get() = showValidation && !ProfileRules.isValidName(name)
@@ -54,7 +57,8 @@ private const val STOP_TIMEOUT_MILLIS = 5_000L
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
-    private val groupRepository: GroupRepository
+    private val groupRepository: GroupRepository,
+    private val appearanceRepository: AppearanceRepository
 ) : ViewModel() {
 
     private val local = MutableStateFlow(SettingsLocalState())
@@ -62,8 +66,9 @@ class SettingsViewModel @Inject constructor(
     val uiState: StateFlow<SettingsUiState> = combine(
         local,
         profileRepository.myProfile.filterNotNull(),
-        groupRepository.groups
-    ) { state, profile, groups ->
+        groupRepository.groups,
+        appearanceRepository.themeMode
+    ) { state, profile, groups, themeMode ->
         SettingsUiState(
             name = state.name,
             email = state.email,
@@ -73,6 +78,7 @@ class SettingsViewModel @Inject constructor(
             isSavingProfile = state.isSavingProfile,
             groups = groups,
             pendingNotifyGroupIds = state.pendingNotifyGroupIds,
+            themeMode = themeMode,
             error = state.error
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), SettingsUiState())
@@ -125,6 +131,10 @@ class SettingsViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    fun onThemeModeChange(mode: ThemeMode) {
+        viewModelScope.launch { appearanceRepository.setThemeMode(mode) }
     }
 
     fun onErrorShown() = local.update { it.copy(error = null) }

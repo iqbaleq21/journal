@@ -15,6 +15,7 @@ import com.iqbal.journal.data.remote.ProfileRemoteDataSource
 import com.iqbal.journal.data.toEntity
 import com.iqbal.journal.domain.model.JournalError
 import com.iqbal.journal.domain.model.NoteColor
+import com.iqbal.journal.domain.model.NoteDraft
 import com.iqbal.journal.domain.model.Outcome
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -198,7 +199,7 @@ class NoteRepositoryImplTest {
         every { noteDao.observeById(any()) } answers
             { flowOf(NoteWithAuthor(saved.captured, "Ayah", isPending = true)) }
 
-        val note = (repository.create("g1", "  Galon habis ", NoteColor.Mint) as Outcome.Success).value
+        val note = (repository.create("g1", NoteDraft("  Galon habis ", NoteColor.Mint)) as Outcome.Success).value
 
         assertEquals("Galon habis", note.content)
         assertEquals("me", note.authorId)
