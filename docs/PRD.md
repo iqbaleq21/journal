@@ -307,7 +307,7 @@ select cron.schedule('purge-deleted-notes', '0 3 * * *',
 | M4 | Push & Sinkron background | US-8, US-11, Edge Function, WorkManager | Widget HP lain update < 10 detik saat app tertutup | ✅ 2026-10-18 (proses app dimatikan: widget berubah ±5 detik setelah edit; notifikasi catatan baru tampil) |
 | M5 | Polish | US-12, US-13, US-14, state kosong/error, ikon | APK release ditandatangani & dibagikan | ✅ 2026-10-18 (APK release 4,1 MB, R8 aktif, diuji di emulator: Kenalan, gabung, tulis, Realtime, push saat app mati). Membagikan APK ke anggota dilakukan pemilik. |
 | M6 | Nice to have | US-15, US-16 | — | ✅ 2026-10-18 (warna tersimpan di server & widget; widget mode "terbaru" berganti ±4 dtk saat app tertutup) |
-| M7 | Checklist, berbagi, tema | US-17, US-18, US-19 | — | ✅ 2026-10-20 (unit test & tes SQL lulus) |
+| M7 | Checklist, berbagi, tema | US-17, US-18, US-19 | — | ✅ 2026-10-20 (diuji di emulator + REST di cloud: checklist, berbagi/cabut akses langsung berlaku, anggota tidak bisa hapus, tema gelap) |
 
 ## 11. Risiko & Mitigasi
 
