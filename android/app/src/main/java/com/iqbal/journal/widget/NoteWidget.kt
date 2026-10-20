@@ -6,8 +6,11 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
@@ -42,6 +45,7 @@ import androidx.glance.unit.ColorProvider
 import com.iqbal.journal.MainActivity
 import com.iqbal.journal.R
 import com.iqbal.journal.domain.model.NoteColor
+import com.iqbal.journal.domain.model.ThemeMode
 import com.iqbal.journal.ui.common.formatRelativeTime
 import com.iqbal.journal.ui.navigation.NoteLink
 import com.iqbal.journal.ui.navigation.openNoteIntent
@@ -59,15 +63,19 @@ class NoteWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val appWidgetId = GlanceAppWidgetManager(context).getAppWidgetId(id)
-        val states = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java)
-            .stateLoader()
-            .observe(appWidgetId)
+        val entryPoint = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java)
+        val states = entryPoint.stateLoader().observe(appWidgetId)
+        val themeModes = entryPoint.appearanceRepository().themeMode
         // Nilai awal dibaca dulu agar widget tidak sempat tampil kosong.
         val initial = states.first()
+        val initialTheme = themeModes.first()
         provideContent {
             // Dikumpulkan di dalam komposisi: selama sesi Glance hidup, update() hanya me-recompose.
             val state by states.collectAsState(initial)
-            NoteWidgetContent(state = state, appWidgetId = appWidgetId)
+            val themeMode by themeModes.collectAsState(initialTheme)
+            CompositionLocalProvider(LocalThemeMode provides themeMode) {
+                NoteWidgetContent(state = state, appWidgetId = appWidgetId)
+            }
         }
     }
 }
@@ -86,7 +94,18 @@ private const val MESSAGE_SIZE = 14
 private const val MAX_LINES_SHORT = 3
 private const val MAX_LINES_TALL = 8
 
-private val InkColor = ColorProvider(day = LightColorScheme.onSurface, night = DarkColorScheme.onSurface)
+private val LocalThemeMode = staticCompositionLocalOf { ThemeMode.System }
+
+/** Tema pilihan di Pengaturan; "ikut sistem" diserahkan ke launcher lewat warna siang/malam. */
+@Composable
+private fun themed(day: Color, night: Color): ColorProvider = when (LocalThemeMode.current) {
+    ThemeMode.System -> ColorProvider(day = day, night = night)
+    ThemeMode.Light -> ColorProvider(day)
+    ThemeMode.Dark -> ColorProvider(night)
+}
+
+@Composable
+private fun inkColor(): ColorProvider = themed(LightColorScheme.onSurface, DarkColorScheme.onSurface)
 
 @Composable
 private fun NoteWidgetContent(state: NoteWidgetState, appWidgetId: Int) {
@@ -148,7 +167,7 @@ private fun NoteContent(state: NoteWidgetState.Showing, appWidgetId: Int) {
                 text = note.previewText,
                 maxLines = if (size.height >= TallMinHeight) MAX_LINES_TALL else MAX_LINES_SHORT,
                 style = TextStyle(
-                    color = InkColor,
+                    color = inkColor(),
                     fontSize = (if (isWide) CONTENT_SIZE_LARGE else CONTENT_SIZE_SMALL).sp,
                     fontWeight = FontWeight.Bold
                 ),
@@ -190,27 +209,22 @@ private fun Message(text: String, onClick: Action, showDeleteIcon: Boolean = fal
         }
         Text(
             text = text,
-            style = TextStyle(color = InkColor, fontSize = MESSAGE_SIZE.sp, fontWeight = FontWeight.Medium)
+            style = TextStyle(color = inkColor(), fontSize = MESSAGE_SIZE.sp, fontWeight = FontWeight.Medium)
         )
     }
 }
 
 /** Sudut membulat hanya didukung Android 12+; versi lama tampil bersudut. */
+@Composable
 private fun cardModifier(color: NoteColor): GlanceModifier = GlanceModifier
     .fillMaxSize()
-    .background(
-        ColorProvider(
-            day = LightNoteColors.swatchFor(color).container,
-            night = DarkNoteColors.swatchFor(color).container
-        )
-    )
+    .background(themed(LightNoteColors.swatchFor(color).container, DarkNoteColors.swatchFor(color).container))
     .cornerRadius(CornerRadius)
     .padding(ContentPadding)
 
-private fun mutedColor(color: NoteColor): ColorProvider = ColorProvider(
-    day = LightNoteColors.swatchFor(color).onContainerMuted,
-    night = DarkNoteColors.swatchFor(color).onContainerMuted
-)
+@Composable
+private fun mutedColor(color: NoteColor): ColorProvider =
+    themed(LightNoteColors.swatchFor(color).onContainerMuted, DarkNoteColors.swatchFor(color).onContainerMuted)
 
 /** Data URI unik per widget agar PendingIntent antar-widget tidak saling menimpa. */
 internal fun Context.widgetConfigIntent(appWidgetId: Int): Intent = Intent(this, WidgetConfigActivity::class.java)

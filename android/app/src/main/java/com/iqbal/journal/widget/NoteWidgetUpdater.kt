@@ -2,6 +2,7 @@ package com.iqbal.journal.widget
 
 import android.content.Context
 import androidx.glance.appwidget.updateAll
+import com.iqbal.journal.domain.repository.AppearanceRepository
 import com.iqbal.journal.domain.repository.GroupRepository
 import com.iqbal.journal.domain.repository.NoteRepository
 import com.iqbal.journal.domain.repository.ProfileRepository
@@ -24,12 +25,18 @@ class NoteWidgetUpdater @Inject constructor(
     @ApplicationContext private val context: Context,
     private val noteRepository: NoteRepository,
     private val groupRepository: GroupRepository,
-    private val profileRepository: ProfileRepository
+    private val profileRepository: ProfileRepository,
+    private val appearanceRepository: AppearanceRepository
 ) {
     @OptIn(FlowPreview::class)
     fun start(scope: CoroutineScope) {
         scope.launch {
-            merge(noteRepository.changes, groupRepository.groups.map { }, profileRepository.myProfile.map { })
+            merge(
+                noteRepository.changes,
+                groupRepository.groups.map { },
+                profileRepository.myProfile.map { },
+                appearanceRepository.themeMode.map { }
+            )
                 // Satu sinkron menulis banyak baris; cukup sekali render ulang setelah tenang.
                 .debounce(UPDATE_DEBOUNCE_MILLIS)
                 .collect { NoteWidget().updateAll(context) }

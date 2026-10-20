@@ -293,7 +293,7 @@ select cron.schedule('purge-deleted-notes', '0 3 * * *',
 3. **Beranda**: pemilih grup di atas (dropdown / tab), daftar catatan grup, FAB "Tulis".
 4. **Editor**: textarea, counter 0/500, simpan / hapus.
 5. **Detail grup**: nama, daftar anggota, kode undangan + share, keluar grup; aksi owner.
-6. **Pengaturan**: ubah nama & email, tema (ikut sistem / terang / gelap; widget tetap mengikuti tema sistem), notifikasi per grup, tips optimasi baterai, peringatan identitas terikat ke HP ini. Tanpa logout (lihat riwayat v0.5).
+6. **Pengaturan**: ubah nama & email, tema (ikut sistem / terang / gelap; berlaku juga untuk widget), notifikasi per grup, tips optimasi baterai, peringatan identitas terikat ke HP ini. Tanpa logout (lihat riwayat v0.5).
 7. **Konfigurasi widget**: pilih grup → pilih catatan.
 8. **Widget**: satu catatan terpilih.
 

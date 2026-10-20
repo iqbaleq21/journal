@@ -1,5 +1,6 @@
 package com.iqbal.journal.widget
 
+import com.iqbal.journal.domain.repository.AppearanceRepository
 import com.iqbal.journal.domain.repository.WidgetRepository
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
@@ -12,4 +13,6 @@ interface WidgetEntryPoint {
     fun stateLoader(): NoteWidgetStateLoader
 
     fun widgetRepository(): WidgetRepository
+
+    fun appearanceRepository(): AppearanceRepository
 }
