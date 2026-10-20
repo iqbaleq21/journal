@@ -11,6 +11,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -20,6 +21,8 @@ data class OnboardingUiState(
     /** Error validasi baru ditampilkan setelah pengguna menekan Mulai. */
     val showValidation: Boolean = false,
     val isSubmitting: Boolean = false,
+    /** Masuk lagi karena sesi di HP ini hilang; isian diambil dari profil lama. */
+    val isSessionLost: Boolean = false,
     val error: JournalError? = null
 ) {
     val isNameValid: Boolean get() = ProfileRules.isValidName(name)
@@ -33,6 +36,14 @@ class OnboardingViewModel @Inject constructor(private val profileRepository: Pro
 
     private val _uiState = MutableStateFlow(OnboardingUiState())
     val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            profileRepository.myProfile.first()?.let { profile ->
+                _uiState.update { it.copy(name = profile.displayName, email = profile.email, isSessionLost = true) }
+            }
+        }
+    }
 
     fun onNameChange(name: String) = _uiState.update { it.copy(name = name.take(ProfileRules.MAX_NAME_LENGTH)) }
 

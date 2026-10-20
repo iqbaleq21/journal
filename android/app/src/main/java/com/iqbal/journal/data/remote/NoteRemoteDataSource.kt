@@ -38,7 +38,7 @@ sealed interface NoteChange {
 
 class NoteRemoteDataSource @Inject constructor(private val client: SupabaseClient) {
     /** Catatan yang belum dihapus, yang terakhir diubah lebih dulu. */
-    suspend fun fetchLatest(groupId: String, limit: Long): List<NoteDto> = client.from(Tables.NOTES)
+    suspend fun fetchLatest(groupId: String, limit: Long): List<NoteDto> = client.withSession().from(Tables.NOTES)
         .select {
             filter {
                 eq("group_id", groupId)
@@ -50,11 +50,12 @@ class NoteRemoteDataSource @Inject constructor(private val client: SupabaseClien
         .decodeList()
 
     /** Catatan tertentu, termasuk yang sudah di-soft-delete, agar penghapusannya bisa diterapkan. */
-    suspend fun fetchByIds(noteIds: Collection<String>): List<NoteDto> = client.from(Tables.NOTES)
+    suspend fun fetchByIds(noteIds: Collection<String>): List<NoteDto> = client.withSession().from(Tables.NOTES)
         .select { filter { isIn("id", noteIds.toList()) } }
         .decodeList()
 
     suspend fun insert(noteId: String, groupId: String, fields: NoteFieldsDto): NoteDto = client
+        .withSession()
         .from(Tables.NOTES)
         .insert(
             NewNoteDto(
@@ -72,7 +73,7 @@ class NoteRemoteDataSource @Inject constructor(private val client: SupabaseClien
         .decodeSingle()
 
     /** Null bila RLS menyaring catatannya (mis. akses berbagi dicabut penulis). */
-    suspend fun updateContent(noteId: String, fields: NoteFieldsDto): NoteDto? = client.from(Tables.NOTES)
+    suspend fun updateContent(noteId: String, fields: NoteFieldsDto): NoteDto? = client.withSession().from(Tables.NOTES)
         .update(fields) {
             select()
             filter { eq("id", noteId) }
@@ -80,7 +81,7 @@ class NoteRemoteDataSource @Inject constructor(private val client: SupabaseClien
         .decodeSingleOrNull()
 
     suspend fun softDelete(noteId: String, deletedAt: Instant) {
-        client.from(Tables.NOTES).update({ set("deleted_at", deletedAt.toString()) }) {
+        client.withSession().from(Tables.NOTES).update({ set("deleted_at", deletedAt.toString()) }) {
             filter { eq("id", noteId) }
         }
     }
@@ -90,6 +91,8 @@ class NoteRemoteDataSource @Inject constructor(private val client: SupabaseClien
      * Channel dilepas saat pengumpul flow berhenti.
      */
     fun changes(): Flow<NoteChange> = channelFlow {
+        // Tanpa sesi, channel bergabung sebagai anon dan RLS tidak mengalirkan perubahan apa pun.
+        client.withSession()
         // Topik unik: pelepasan channel lama (topik sama) yang masih berjalan bisa ikut menutup channel baru.
         val channel = client.channel("$CHANNEL_NOTES-${UUID.randomUUID()}")
         val actions = channel.postgresChangeFlow<PostgresAction>(schema = SCHEMA) { table = Tables.NOTES }
@@ -122,7 +125,7 @@ class NoteRemoteDataSource @Inject constructor(private val client: SupabaseClien
     }
 
     /** Tersedia meski offline: sesi tersimpan di HP. */
-    fun currentUserId(): String = checkNotNull(client.auth.currentUserOrNull()) { "Belum ada sesi" }.id
+    fun currentUserId(): String = client.auth.currentUserOrNull()?.id ?: throw NoSessionException()
 
     private companion object {
         const val SCHEMA = "public"

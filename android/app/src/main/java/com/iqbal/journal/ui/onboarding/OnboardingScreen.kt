@@ -85,6 +85,13 @@ fun OnboardingScreen(
             NoteStackIllustration()
             Wordmark(style = MaterialTheme.typography.displayLarge)
             Text(text = stringResource(R.string.onboarding_headline), style = MaterialTheme.typography.headlineMedium)
+            if (state.isSessionLost) {
+                Text(
+                    text = stringResource(R.string.onboarding_session_lost),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
 
             OutlinedTextField(
                 value = state.name,

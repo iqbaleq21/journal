@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.map
 
 class FakeProfileRepository : ProfileRepository {
     override val myProfile = MutableStateFlow<Profile?>(null)
+    override val isSessionLost = MutableStateFlow(false)
     var nextResult: Outcome<Profile>? = null
     val createCalls = mutableListOf<Pair<String, String>>()
 
@@ -33,7 +34,10 @@ class FakeProfileRepository : ProfileRepository {
         createCalls += displayName to email
         gate?.await()
         val result = nextResult ?: Outcome.Success(Profile("me", displayName, email))
-        if (result is Outcome.Success) myProfile.value = result.value
+        if (result is Outcome.Success) {
+            myProfile.value = result.value
+            isSessionLost.value = false
+        }
         return result
     }
 }

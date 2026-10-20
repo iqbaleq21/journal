@@ -12,6 +12,7 @@ import com.iqbal.journal.domain.repository.ProfileRepository
 import com.iqbal.journal.domain.validation.ProfileRules
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 
 class ProfileRepositoryImpl @Inject constructor(
@@ -21,6 +22,9 @@ class ProfileRepositoryImpl @Inject constructor(
 
     override val myProfile: Flow<Profile?> = dao.observe().map { it?.toDomain() }
 
+    override val isSessionLost: Flow<Boolean> =
+        combine(dao.observe(), remote.isSignedOut) { profile, signedOut -> profile != null && signedOut }
+
     override suspend fun saveProfile(displayName: String, email: String): Outcome<Profile> = outcomeOf {
         val profile = Profile(
             id = remote.ensureSignedIn(),
@@ -28,7 +32,7 @@ class ProfileRepositoryImpl @Inject constructor(
             email = ProfileRules.normalizeEmail(email)
         )
         remote.upsertProfile(ProfileDto(profile.id, profile.displayName, profile.email))
-        dao.upsert(profile.toEntity())
+        dao.replace(profile.toEntity())
         profile
     }
 }

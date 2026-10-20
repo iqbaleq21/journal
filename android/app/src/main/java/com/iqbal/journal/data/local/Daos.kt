@@ -14,6 +14,16 @@ interface MyProfileDao {
 
     @Upsert
     suspend fun upsert(profile: MyProfileEntity)
+
+    @Query("DELETE FROM my_profile")
+    suspend fun deleteAll()
+
+    /** Selalu satu baris: masuk lagi setelah sesi hilang memberi id pengguna baru. */
+    @Transaction
+    suspend fun replace(profile: MyProfileEntity) {
+        deleteAll()
+        upsert(profile)
+    }
 }
 
 @Dao

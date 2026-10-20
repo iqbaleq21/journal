@@ -8,6 +8,7 @@ import javax.inject.Inject
 class DeviceRemoteDataSource @Inject constructor(private val client: SupabaseClient) {
     /** Dilewati bila belum ada sesi (profil belum diisi); token didaftarkan nanti saat app dibuka. */
     suspend fun upsert(token: String) {
+        client.auth.awaitInitialization()
         val userId = client.auth.currentUserOrNull()?.id ?: return
         client.from(Tables.DEVICES).upsert(DeviceDto(fcmToken = token, userId = userId))
     }

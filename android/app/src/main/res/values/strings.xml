@@ -14,6 +14,7 @@
     <string name="onboarding_email_placeholder">nama@email.com</string>
     <string name="onboarding_email_error">Format email belum benar</string>
     <string name="onboarding_submit">Mulai</string>
+    <string name="onboarding_session_lost">Akun di HP ini tidak lagi dikenali server. Tekan Mulai untuk masuk lagi, lalu gabung ulang ke grupmu dengan kode undangan.</string>
     <string name="illustration_note_1">Jemput Kiara jam 3 sore ya.</string>
     <string name="illustration_note_2">Semangat hari ini!</string>
     <string name="illustration_note_3">Galon habis, pesan 2</string>

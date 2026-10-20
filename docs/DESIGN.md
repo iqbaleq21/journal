@@ -71,7 +71,7 @@ Spasi kelipatan 4 dp. Padding layar 20 dp, jarak antar kartu 12 dp.
 
 | # | Layar | Catatan |
 |---|---|---|
-| 1 | Kenalan | Ilustrasi tumpukan catatan + bentuk ekspresif, input nama & email, tombol "Mulai" (tanpa login) |
+| 1 | Kenalan | Ilustrasi tumpukan catatan + bentuk ekspresif, input nama & email, tombol "Mulai" (tanpa login). Bila sesi dicabut server: isian lama terisi + teks penjelasan berwarna error |
 | 2 | Mulai | Muncul jika belum punya grup: kartu "Buat grup baru" & "Gabung dengan kode" (6 kotak) |
 | 3 | Beranda | Chip pemilih grup, kartu ringkasan grup dengan tumpukan avatar anggota (tap → Detail grup), tombol Pengaturan di kanan atas, grid masonry catatan, badge "Di widget" (M3), FAB "Tulis" |
 | 4 | Editor | Kartu catatan besar sesuai warna, counter 0/500, pemilih warna (6 lingkaran 48 dp, ring 3 dp untuk yang terpilih), segmented button Teks / Checklist, switch "Anggota lain boleh mengedit" (hanya penulis), hapus dengan konfirmasi (hanya penulis). Checklist: baris checkbox + teks + tombol hapus item, "Tambah item", Enter di item terakhir menambah item, item tercentang dicoret. Catatan orang lain yang tidak dibagikan tampil read-only. |

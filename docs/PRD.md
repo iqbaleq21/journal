@@ -80,6 +80,7 @@ Aplikasi catatan untuk **sekelompok kecil orang yang saling terhubung** (pasanga
 - Di belakang layar app memanggil **Supabase Anonymous Sign-In** (`signInAnonymously`), sehingga setiap instalasi punya `auth.uid()` sendiri. Ini wajib agar RLS tetap bekerja; tanpa identitas, siapa pun yang memegang anon key bisa membaca semua data.
 - Setelah sign-in anonim, app menyimpan nama & email ke `profiles` (insert milik sendiri, dijaga RLS). Keduanya bisa diubah di Pengaturan.
 - Sesi disimpan; app tidak pernah meminta login lagi. Tidak ada logout (akun anonim tidak bisa dipulihkan setelah logout).
+- Bila server mencabut sesi (mis. akun dihapus), app kembali ke Kenalan dengan nama & email lama terisi dan penjelasan singkat; "Mulai" membuat akun anonim baru, lalu pengguna gabung ulang ke grupnya dengan kode undangan. Semua request ke Supabase menunggu sesi selesai dimuat dari penyimpanan; tanpa sesi, request tidak dikirim (antrean offline tetap disimpan, cache tidak dikosongkan).
 - **Konsekuensi**: identitas terikat ke instalasi. Uninstall, hapus data app, atau ganti HP = akun baru. Pengguna harus gabung grup lagi; catatan lamanya tetap ada tetapi tidak bisa diedit oleh akun baru.
 - **Jalan upgrade (nanti)**: akun anonim bisa dijadikan permanen dengan menautkan email terverifikasi (`updateUser(email)` + OTP) tanpa kehilangan data. Butuh SMTP sendiri karena email bawaan Supabase sangat dibatasi.
 - Setting Supabase: *Authentication → Sign In / Providers → Allow anonymous sign-ins* = aktif.
@@ -317,6 +318,7 @@ select cron.schedule('purge-deleted-notes', '0 3 * * *',
 | FCM tertunda karena Doze / battery optimizer vendor (Xiaomi, Oppo, dll.) | Priority `high`; WorkManager fallback; panduan di app untuk mematikan optimasi baterai. |
 | Token FCM berubah / HP ganti | Tabel `devices`; upsert token di `onNewToken` & saat app dibuka; hapus token invalid. |
 | Identitas hilang saat uninstall / hapus data / ganti HP (akun anonim) | Peringatan di Pengaturan; v2: tautkan email terverifikasi (§5.1). |
+| Sesi dicabut server (akun dihapus, token tidak berlaku) | Kembali ke Kenalan dengan isian lama, masuk lagi sebagai akun baru, gabung ulang dengan kode (§5.1). |
 | Penyalahgunaan anonymous sign-in (bot membuat akun) | Rate limit bawaan Supabase; opsional CAPTCHA jika app disebar luas. |
 | Konflik edit | Hanya penulis, atau anggota pada catatan yang dibagikan, yang bisa mengedit; konflik hanya mungkin di catatan yang dibagikan dan diselesaikan last-write-wins. |
 | Catatan yang ditampilkan widget dihapus | State khusus di widget + ajakan memilih catatan lain. |

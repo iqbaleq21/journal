@@ -69,6 +69,40 @@ class OnboardingViewModelTest {
         viewModel.onErrorShown()
         assertNull(viewModel.uiState.value.error)
     }
+
+    @Test
+    fun `sesi hilang mengisi ulang profil lama dan menampilkan penjelasan`() {
+        profiles.myProfile.value = Profile("lama", "Ayah", "ayah@rumah.id")
+        profiles.isSessionLost.value = true
+
+        val state = viewModel.uiState.value
+        assertTrue(state.isSessionLost)
+        assertEquals("Ayah", state.name)
+        assertEquals("ayah@rumah.id", state.email)
+
+        viewModel.onSubmit()
+        assertEquals(listOf("Ayah" to "ayah@rumah.id"), profiles.createCalls)
+    }
+}
+
+class RootViewModelTest {
+    @get:Rule val mainDispatcherRule = MainDispatcherRule()
+
+    private val profiles = FakeProfileRepository().apply { myProfile.value = Profile("me", "Ayah", "a@b.id") }
+    private val viewModel by lazy { RootViewModel(profiles, FakeGroupRepository()) }
+
+    @Test
+    fun `sesi yang dicabut server kembali ke Kenalan, lalu masuk lagi membuka aplikasi`() = runTest {
+        viewModel.uiState.test {
+            assertEquals(RootUiState.Ready(hasGroups = false), expectMostRecentItem())
+
+            profiles.isSessionLost.value = true
+            assertEquals(RootUiState.NeedsProfile, awaitItem())
+
+            profiles.saveProfile("Ayah", "a@b.id")
+            assertEquals(RootUiState.Ready(hasGroups = false), awaitItem())
+        }
+    }
 }
 
 class StartViewModelTest {

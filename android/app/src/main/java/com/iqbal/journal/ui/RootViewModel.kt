@@ -24,7 +24,15 @@ private const val STOP_TIMEOUT_MILLIS = 5_000L
 class RootViewModel @Inject constructor(profileRepository: ProfileRepository, groupRepository: GroupRepository) :
     ViewModel() {
     val uiState: StateFlow<RootUiState> =
-        combine(profileRepository.myProfile, groupRepository.groups) { profile, groups ->
-            if (profile == null) RootUiState.NeedsProfile else RootUiState.Ready(hasGroups = groups.isNotEmpty())
+        combine(
+            profileRepository.myProfile,
+            profileRepository.isSessionLost,
+            groupRepository.groups
+        ) { profile, sessionLost, groups ->
+            if (profile == null || sessionLost) {
+                RootUiState.NeedsProfile
+            } else {
+                RootUiState.Ready(hasGroups = groups.isNotEmpty())
+            }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), RootUiState.Loading)
 }
