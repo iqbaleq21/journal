@@ -51,6 +51,7 @@ import com.iqbal.journal.ui.components.InviteCodeField
 import com.iqbal.journal.ui.theme.JournalTheme
 import com.iqbal.journal.ui.theme.Sizes
 import com.iqbal.journal.ui.theme.Spacing
+import com.iqbal.journal.ui.theme.hardShadow
 
 @Composable
 fun StartRoute(onGroupReady: () -> Unit, onBack: (() -> Unit)?, viewModel: StartViewModel = hiltViewModel()) {
@@ -163,7 +164,10 @@ private fun CreateGroupCard(enabled: Boolean, onClick: () -> Unit) {
         shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.primary,
         contentColor = MaterialTheme.colorScheme.onPrimary,
-        modifier = Modifier.fillMaxWidth()
+        border = JournalTheme.cardStyle.border,
+        modifier = Modifier
+            .fillMaxWidth()
+            .hardShadow(MaterialTheme.shapes.extraLarge)
     ) {
         Column(Modifier.padding(Spacing.large), verticalArrangement = Arrangement.spacedBy(Spacing.large)) {
             Box(
@@ -198,8 +202,10 @@ private fun JoinGroupCard(
     Surface(
         shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(Sizes.outlineThin, MaterialTheme.colorScheme.outline),
-        modifier = Modifier.fillMaxWidth()
+        border = JournalTheme.cardStyle.border,
+        modifier = Modifier
+            .fillMaxWidth()
+            .hardShadow(MaterialTheme.shapes.extraLarge)
     ) {
         Column(Modifier.padding(Spacing.large), verticalArrangement = Arrangement.spacedBy(Spacing.medium)) {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {

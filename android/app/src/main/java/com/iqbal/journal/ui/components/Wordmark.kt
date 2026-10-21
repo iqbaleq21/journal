@@ -12,11 +12,12 @@ import androidx.compose.ui.text.withStyle
 /** Logo teks "jOURnal": bagian "OUR" diberi warna primary. */
 @Composable
 fun Wordmark(style: TextStyle, modifier: Modifier = Modifier) {
-    val accent = MaterialTheme.colorScheme.primary
+    val accent = MaterialTheme.colorScheme.primaryContainer
+    val onAccent = MaterialTheme.colorScheme.onPrimaryContainer
     Text(
         text = buildAnnotatedString {
             append("j")
-            withStyle(SpanStyle(color = accent)) { append("OUR") }
+            withStyle(SpanStyle(color = onAccent, background = accent)) { append("OUR") }
             append("nal")
         },
         style = style,

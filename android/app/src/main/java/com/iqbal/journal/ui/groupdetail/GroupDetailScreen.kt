@@ -55,6 +55,7 @@ import com.iqbal.journal.ui.components.InviteCodeDisplay
 import com.iqbal.journal.ui.theme.JournalTheme
 import com.iqbal.journal.ui.theme.Sizes
 import com.iqbal.journal.ui.theme.Spacing
+import com.iqbal.journal.ui.theme.hardShadow
 import java.time.Instant
 
 /** Batas anggota per grup; harus sama dengan RPC join_group di database. */
@@ -199,9 +200,12 @@ private fun InviteCard(
     val code = group.inviteCode?.takeIf { daysLeft != 0 }
     Surface(
         shape = MaterialTheme.shapes.extraLarge,
-        color = MaterialTheme.colorScheme.inverseSurface,
-        contentColor = MaterialTheme.colorScheme.inverseOnSurface,
-        modifier = Modifier.fillMaxWidth()
+        color = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        border = JournalTheme.cardStyle.border,
+        modifier = Modifier
+            .fillMaxWidth()
+            .hardShadow(MaterialTheme.shapes.extraLarge)
     ) {
         Column(Modifier.padding(Spacing.large), verticalArrangement = Arrangement.spacedBy(Spacing.medium)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -220,7 +224,7 @@ private fun InviteCard(
             if (code != null) {
                 InviteCodeDisplay(
                     code,
-                    container = MaterialTheme.colorScheme.inverseOnSurface.copy(alpha = CODE_BOX_ALPHA)
+                    container = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = CODE_BOX_ALPHA)
                 )
             } else {
                 Text(
@@ -235,8 +239,8 @@ private fun InviteCard(
                     Button(
                         onClick = { onShare(group, code) },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = JournalTheme.noteColors.butter.container,
-                            contentColor = MaterialTheme.colorScheme.onSurface
+                            containerColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            contentColor = MaterialTheme.colorScheme.primaryContainer
                         ),
                         modifier = Modifier
                             .weight(1f)
@@ -258,9 +262,9 @@ private fun InviteCard(
                     OutlinedButton(
                         onClick = onRegenerate,
                         enabled = enabled,
-                        border = BorderStroke(Sizes.outlineThin, MaterialTheme.colorScheme.inverseOnSurface),
+                        border = BorderStroke(Sizes.outlineThin, MaterialTheme.colorScheme.onPrimaryContainer),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.inverseOnSurface
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         ),
                         modifier = Modifier
                             .weight(1f)
@@ -288,7 +292,10 @@ private fun MemberList(
     Surface(
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surface,
-        modifier = Modifier.fillMaxWidth()
+        border = JournalTheme.cardStyle.border,
+        modifier = Modifier
+            .fillMaxWidth()
+            .hardShadow(MaterialTheme.shapes.large)
     ) {
         Column(Modifier.padding(vertical = Spacing.small)) {
             members.forEach { member ->

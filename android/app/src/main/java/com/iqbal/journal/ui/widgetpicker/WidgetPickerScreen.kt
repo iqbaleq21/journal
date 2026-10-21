@@ -51,6 +51,7 @@ import com.iqbal.journal.ui.common.relativeTimeText
 import com.iqbal.journal.ui.theme.JournalTheme
 import com.iqbal.journal.ui.theme.Sizes
 import com.iqbal.journal.ui.theme.Spacing
+import com.iqbal.journal.ui.theme.hardShadow
 import com.iqbal.journal.ui.theme.swatchFor
 import java.time.Instant
 
@@ -205,7 +206,10 @@ private fun NoteList(
     Surface(
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surface,
-        modifier = modifier.fillMaxWidth()
+        border = JournalTheme.cardStyle.border,
+        modifier = modifier
+            .fillMaxWidth()
+            .hardShadow(MaterialTheme.shapes.large)
     ) {
         LazyColumn(contentPadding = PaddingValues(Spacing.small), modifier = Modifier.selectableGroup()) {
             item(key = "latest") {

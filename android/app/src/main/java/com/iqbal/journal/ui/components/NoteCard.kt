@@ -27,6 +27,7 @@ import com.iqbal.journal.ui.common.relativeTimeText
 import com.iqbal.journal.ui.theme.JournalTheme
 import com.iqbal.journal.ui.theme.Sizes
 import com.iqbal.journal.ui.theme.Spacing
+import com.iqbal.journal.ui.theme.hardShadow
 import com.iqbal.journal.ui.theme.swatchFor
 import java.time.Instant
 
@@ -48,12 +49,8 @@ fun NoteCard(note: Note, isMine: Boolean, isOnWidget: Boolean, onClick: () -> Un
         onClick = onClick,
         shape = MaterialTheme.shapes.medium,
         color = swatch.container,
-        border = if (note.color == NoteColor.Plain) {
-            BorderStroke(Sizes.outlineThin, MaterialTheme.colorScheme.outline)
-        } else {
-            null
-        },
-        modifier = modifier
+        border = JournalTheme.cardStyle.border,
+        modifier = modifier.hardShadow(MaterialTheme.shapes.medium)
     ) {
         Column(Modifier.padding(Spacing.medium), verticalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
             if (isOnWidget) WidgetBadge()

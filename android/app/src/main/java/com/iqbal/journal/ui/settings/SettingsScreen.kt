@@ -59,6 +59,7 @@ import com.iqbal.journal.ui.common.messageRes
 import com.iqbal.journal.ui.theme.JournalTheme
 import com.iqbal.journal.ui.theme.Sizes
 import com.iqbal.journal.ui.theme.Spacing
+import com.iqbal.journal.ui.theme.hardShadow
 
 @Composable
 fun SettingsRoute(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewModel()) {
@@ -153,7 +154,10 @@ private fun Section(title: String, content: @Composable () -> Unit) {
         Surface(
             shape = MaterialTheme.shapes.large,
             color = MaterialTheme.colorScheme.surface,
-            modifier = Modifier.fillMaxWidth()
+            border = JournalTheme.cardStyle.border,
+            modifier = Modifier
+                .fillMaxWidth()
+                .hardShadow(MaterialTheme.shapes.large)
         ) {
             Column(Modifier.padding(Spacing.medium), verticalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
                 content()

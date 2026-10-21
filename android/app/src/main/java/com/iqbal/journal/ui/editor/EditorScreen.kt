@@ -69,6 +69,7 @@ import com.iqbal.journal.ui.theme.JournalTheme
 import com.iqbal.journal.ui.theme.NoteSwatch
 import com.iqbal.journal.ui.theme.Sizes
 import com.iqbal.journal.ui.theme.Spacing
+import com.iqbal.journal.ui.theme.hardShadow
 import com.iqbal.journal.ui.theme.swatchFor
 import java.time.Instant
 
@@ -242,12 +243,10 @@ private fun NoteEditorCard(
     Surface(
         shape = MaterialTheme.shapes.extraLarge,
         color = swatch.container,
-        border = if (state.color == NoteColor.Plain) {
-            BorderStroke(Sizes.outlineThin, MaterialTheme.colorScheme.outline)
-        } else {
-            null
-        },
-        modifier = modifier.fillMaxWidth()
+        border = JournalTheme.cardStyle.border,
+        modifier = modifier
+            .fillMaxWidth()
+            .hardShadow(MaterialTheme.shapes.extraLarge)
     ) {
         Column(Modifier.padding(Spacing.large), verticalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
             Text(

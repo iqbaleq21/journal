@@ -8,7 +8,10 @@ import androidx.compose.runtime.ReadOnlyComposable
 
 @Composable
 fun JournalTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
-    CompositionLocalProvider(LocalNoteColors provides if (darkTheme) DarkNoteColors else LightNoteColors) {
+    CompositionLocalProvider(
+        LocalNoteColors provides if (darkTheme) DarkNoteColors else LightNoteColors,
+        LocalCardStyle provides if (darkTheme) DarkCardStyle else LightCardStyle
+    ) {
         MaterialTheme(
             colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
             typography = JournalTypography,
@@ -24,4 +27,9 @@ object JournalTheme {
         @Composable
         @ReadOnlyComposable
         get() = LocalNoteColors.current
+
+    val cardStyle: CardStyle
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalCardStyle.current
 }

@@ -56,6 +56,7 @@ import com.iqbal.journal.ui.theme.FabShape
 import com.iqbal.journal.ui.theme.JournalTheme
 import com.iqbal.journal.ui.theme.Sizes
 import com.iqbal.journal.ui.theme.Spacing
+import com.iqbal.journal.ui.theme.hardShadow
 import java.time.Instant
 
 @Composable
@@ -193,7 +194,10 @@ private fun GroupSummaryCard(
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.primaryContainer,
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        modifier = modifier.fillMaxWidth()
+        border = JournalTheme.cardStyle.border,
+        modifier = modifier
+            .fillMaxWidth()
+            .hardShadow(MaterialTheme.shapes.large)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -225,7 +229,7 @@ private fun AvatarStack(names: List<String>) {
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .size(Sizes.avatarStack)
-                    .border(Sizes.outlineThick, MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                    .border(Sizes.outlineThick, MaterialTheme.colorScheme.onPrimaryContainer, CircleShape)
                     .background(swatches[index % swatches.size].container, CircleShape)
             ) {
                 Text(

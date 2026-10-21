@@ -1,5 +1,6 @@
 package com.iqbal.journal.ui.home
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,6 +12,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -20,12 +22,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import com.iqbal.journal.R
 import com.iqbal.journal.domain.model.Note
 import com.iqbal.journal.ui.components.NoteCard
 import com.iqbal.journal.ui.theme.FabShape
+import com.iqbal.journal.ui.theme.JournalTheme
 import com.iqbal.journal.ui.theme.Sizes
 import com.iqbal.journal.ui.theme.Spacing
+import com.iqbal.journal.ui.theme.hardShadow
 
 // Bagian daftar catatan di Beranda.
 
@@ -86,11 +91,15 @@ internal fun WriteButton(onClick: () -> Unit) {
     ExtendedFloatingActionButton(
         onClick = onClick,
         shape = FabShape,
-        containerColor = MaterialTheme.colorScheme.primary,
-        contentColor = MaterialTheme.colorScheme.onPrimary,
+        containerColor = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp, 0.dp, 0.dp),
         icon = { Icon(painterResource(R.drawable.ic_edit), contentDescription = null) },
         text = { Text(stringResource(R.string.home_write), style = MaterialTheme.typography.labelLarge) },
-        modifier = Modifier.height(Sizes.fabHeight)
+        modifier = Modifier
+            .height(Sizes.fabHeight)
+            .hardShadow(FabShape)
+            .border(JournalTheme.cardStyle.border, FabShape)
     )
 }
 

@@ -30,22 +30,22 @@ fun NoteColors.swatchFor(color: NoteColor): NoteSwatch = when (color) {
 }
 
 internal val LightNoteColors = NoteColors(
-    butter = NoteSwatch(Color(0xFFFFE7A3), Color(0xFF5A4A20)),
-    mint = NoteSwatch(Color(0xFFC9F0D8), Color(0xFF2F4A3A)),
-    sky = NoteSwatch(Color(0xFFCDE2FF), Color(0xFF3E4A60)),
-    peach = NoteSwatch(Color(0xFFFFD3BF), Color(0xFF4D4040)),
-    lilac = NoteSwatch(Color(0xFFE2D8FF), Color(0xFF4A4566)),
-    plain = NoteSwatch(Color(0xFFFFFFFF), Color(0xFF5E5B6B))
+    butter = NoteSwatch(Color(0xFFFFD84D), Color(0xFF4A3D00)),
+    mint = NoteSwatch(Color(0xFF7CE0A3), Color(0xFF1E4A30)),
+    sky = NoteSwatch(Color(0xFF8CB8FF), Color(0xFF1F3A66)),
+    peach = NoteSwatch(Color(0xFFFF9F7A), Color(0xFF5A2A14)),
+    lilac = NoteSwatch(Color(0xFFC3A6FF), Color(0xFF3D2A70)),
+    plain = NoteSwatch(Color(0xFFFFFFFF), Color(0xFF444444))
 )
 
-// Hue sama dengan versi terang, lightness diturunkan agar teks terang tetap kontras.
+// Hue sama dengan versi terang, lightness diturunkan jauh agar kartu menyatu dengan latar gelap.
 internal val DarkNoteColors = NoteColors(
-    butter = NoteSwatch(Color(0xFF4A3F1C), Color(0xFFE8DDB8)),
-    mint = NoteSwatch(Color(0xFF1F3B2C), Color(0xFFC3E3CF)),
-    sky = NoteSwatch(Color(0xFF1E2F4A), Color(0xFFC6D6F0)),
-    peach = NoteSwatch(Color(0xFF4A2E22), Color(0xFFF0CDBE)),
-    lilac = NoteSwatch(Color(0xFF2F2752), Color(0xFFD9D0F5)),
-    plain = NoteSwatch(Color(0xFF24232B), Color(0xFFC9C5D8))
+    butter = NoteSwatch(Color(0xFF2E2914), Color(0xFFE8DDB8)),
+    mint = NoteSwatch(Color(0xFF16291E), Color(0xFFC3E3CF)),
+    sky = NoteSwatch(Color(0xFF172233), Color(0xFFC6D6F0)),
+    peach = NoteSwatch(Color(0xFF301F18), Color(0xFFF0CDBE)),
+    lilac = NoteSwatch(Color(0xFF231D36), Color(0xFFD9D0F5)),
+    plain = NoteSwatch(Color(0xFF17171A), Color(0xFFA0A0A8))
 )
 
 internal val LocalNoteColors = staticCompositionLocalOf { LightNoteColors }

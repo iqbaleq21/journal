@@ -4,44 +4,51 @@ Mockup visual: https://claude.ai/artifact/3RnmmuEQCbK2q4LJ6kY63i (canvas berisi 
 
 ## Arah desain
 
-Mengikuti **Material 3 Expressive** (bahasa desain Android terbaru): bentuk besar yang membulat, warna pastel yang hidup, tipografi tebal yang ekspresif, dan gerak yang terasa memantul. Catatan ditampilkan sebagai kartu berwarna seperti kertas tempel, disusun model **bento / masonry** dua kolom.
+Dipilih 2026-10-21 dari kanvas opsi UI (https://claude.ai/artifact/WCX2YhCRkqAzzQnBgNmR5k):
+- **Tema terang = opsi D "Berani"** (neo-brutalism ringan): latar abu terang, tinta hitam, kuning sebagai aksen, kartu bergaris hitam 2 dp dengan bayangan padat 4 dp ke kanan-bawah, warna catatan cerah.
+- **Tema gelap = opsi C "Malam"**: hitam pekat, satu aksen lime, kartu bergaris tipis 1 dp tanpa bayangan, warna catatan berupa tint gelap.
+
+Tata letak dan tipografi (Bricolage Grotesque + Figtree) sama di kedua tema; yang berbeda hanya token warna dan `CardStyle`.
 
 Prinsip:
 - Konten (isi catatan) adalah tokoh utama. Chrome UI tipis dan netral.
 - Satu aksi utama per layar (FAB "Tulis", "Simpan", "Pasang widget").
-- Mendukung tema gelap dari awal (lihat widget gelap di mockup).
-- Aksesibel: kontras teks ≥ 4.5:1, target sentuh ≥ 44 dp (48 dp di Android), semua ikon-tombol punya `contentDescription`.
+- Aksesibel: kontras teks ≥ 4.5:1, target sentuh ≥ 48 dp, semua ikon-tombol punya `contentDescription`.
 
 ## Token
 
-### Warna (tema terang)
-| Token | Hex | Pemakaian |
+### Warna
+| Token | Terang (D) | Gelap (C) | Pemakaian |
+|---|---|---|---|
+| `primary` / `onPrimary` | `#111111` / `#FFFFFF` | `#D4FF3F` / `#0E0E10` | Tombol utama (Simpan), chip terpilih |
+| `primaryContainer` / `on…` | `#FFD84D` / `#111111` | `#D4FF3F` / `#0E0E10` | FAB, kartu ringkasan grup, sorotan "OUR" di wordmark |
+| `background` | `#F4F4F0` | `#0E0E10` | Latar layar |
+| `surface` / `onSurface` | `#FFFFFF` / `#111111` | `#17171A` / `#F2F2F3` | Kartu, teks utama |
+| `surfaceVariant` / `onSurfaceVariant` | `#E8E8E2` / `#444444` | `#2A2A30` / `#A0A0A8` | Tombol ikon, teks sekunder |
+| `secondaryContainer` | `#E8E8E2` | `#2A2A30` | Tombol ikon tonal, segmen terpilih |
+| `surfaceContainer*` | putih (tertinggi `#E8E8E2`) | `#0E0E10`–`#2A2A30` | Bottom sheet & dialog (wajib diisi agar tidak ungu bawaan Material) |
+| `outline` | `#111111` | `#6E6E76` | Tepi chip, input, thumb switch mati |
+| `error` | `#B3261E` | `#FF8A80` | Hapus, keluar grup |
+
+### Garis & bayangan kartu (`CardStyle`)
+| | Terang | Gelap |
 |---|---|---|
-| `primary` | `#4F3BD1` | FAB, tombol utama, aksen wordmark |
-| `onPrimary` | `#FFFFFF` | Teks di atas primary |
-| `primaryContainer` | `#E6E0FF` | Kartu ringkasan grup, chip label grup |
-| `onPrimaryContainer` | `#2F2580` | Teks di atas primaryContainer |
-| `background` | `#F6F5FA` | Latar layar |
-| `surface` | `#FFFFFF` | Kartu daftar, kartu putih |
-| `surfaceVariant` | `#ECEAF3` | Tombol ikon bulat, tombol nonaktif |
-| `outline` | `#DCD9E6` | Garis chip yang tidak dipilih |
-| `onSurface` (ink) | `#1C1B22` | Teks utama, chip terpilih |
-| `onSurfaceVariant` | `#5E5B6B` | Teks sekunder |
-| `error` | `#B3261E` | Hapus, keluar grup |
+| Garis | 2 dp `#111111` | 1 dp `#2A2A30` |
+| Bayangan | padat 4 dp kanan-bawah, `#111111` (`Modifier.hardShadow`) | tidak ada |
+
+Dipakai di kartu catatan, kartu Editor, kartu ringkasan grup, kartu Mulai, kartu Pengaturan/Detail grup/Pilih widget, dan FAB.
 
 ### Warna catatan
-Disimpan di kolom `notes.color` sebagai kunci, bukan hex, agar bisa diganti per tema:
+Disimpan di kolom `notes.color` sebagai kunci, bukan hex, agar bisa diganti per tema (widget memakai token yang sama):
 
-| Kunci | Terang | Teks sekunder di atasnya |
-|---|---|---|
-| `butter` | `#FFE7A3` | `#5A4A20` |
-| `mint` | `#C9F0D8` | `#2F4A3A` |
-| `sky` | `#CDE2FF` | `#3E4A60` |
-| `peach` | `#FFD3BF` | `#4D4040` |
-| `lilac` | `#E2D8FF` | `#4A4566` |
-| `plain` (default) | `#FFFFFF` | `#5E5B6B` |
-
-Versi gelap tiap warna ditentukan saat implementasi tema gelap (turunkan lightness, pertahankan hue).
+| Kunci | Terang | Teks sekunder | Gelap | Teks sekunder |
+|---|---|---|---|---|
+| `butter` | `#FFD84D` | `#4A3D00` | `#2E2914` | `#E8DDB8` |
+| `mint` | `#7CE0A3` | `#1E4A30` | `#16291E` | `#C3E3CF` |
+| `sky` | `#8CB8FF` | `#1F3A66` | `#172233` | `#C6D6F0` |
+| `peach` | `#FF9F7A` | `#5A2A14` | `#301F18` | `#F0CDBE` |
+| `lilac` | `#C3A6FF` | `#3D2A70` | `#231D36` | `#D9D0F5` |
+| `plain` (default) | `#FFFFFF` | `#444444` | `#17171A` | `#A0A0A8` |
 
 ### Tipografi
 | Peran | Font | Ukuran / berat |
@@ -56,16 +63,16 @@ Kedua font dari Google Fonts. Bundel sebagai resource (`res/font`), bukan downlo
 ### Bentuk & spasi
 | Elemen | Radius |
 |---|---|
-| Kartu catatan | 24 dp |
-| Kartu besar / widget | 28–32 dp |
-| FAB | 22 dp (rounded square) |
+| Kartu catatan | 18 dp |
+| Kartu besar / widget | 24 dp |
+| FAB | 20 dp (rounded square) |
 | Tombol & chip | pill (`50%`) |
-| Input kode | 16 dp |
+| Input | 14 dp |
 
 Spasi kelipatan 4 dp. Padding layar 20 dp, jarak antar kartu 12 dp.
 
 ### Wordmark
-`j` + **`OUR`** (warna primary) + `nal`, Bricolage Grotesque 700–800.
+`j` + **`OUR`** (latar `primaryContainer`: kuning/lime) + `nal`, Bricolage Grotesque 700–800.
 
 ## Daftar layar
 
