@@ -13,6 +13,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.glance.ColorFilter
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
@@ -203,6 +204,7 @@ private fun Message(text: String, onClick: Action, showDeleteIcon: Boolean = fal
             Image(
                 provider = ImageProvider(R.drawable.ic_delete),
                 contentDescription = null,
+                colorFilter = ColorFilter.tint(inkColor()),
                 modifier = GlanceModifier.size(IconSize)
             )
             Spacer(GlanceModifier.defaultWeight())
