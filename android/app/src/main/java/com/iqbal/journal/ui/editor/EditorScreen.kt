@@ -4,12 +4,16 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
@@ -20,9 +24,11 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
@@ -44,6 +50,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -76,6 +83,8 @@ fun EditorRoute(onDone: () -> Unit, onBack: () -> Unit, viewModel: EditorViewMod
         onColorChange = viewModel::onColorChange,
         onKindChange = viewModel::onKindChange,
         onSharedChange = viewModel::onSharedChange,
+        onSettingsClick = viewModel::onSettingsClick,
+        onSettingsDismiss = viewModel::onSettingsDismiss,
         checklist = ChecklistCallbacks(
             onTextChange = viewModel::onItemTextChange,
             onCheckedChange = viewModel::onItemCheckedChange,
@@ -90,6 +99,7 @@ fun EditorRoute(onDone: () -> Unit, onBack: () -> Unit, viewModel: EditorViewMod
     )
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun EditorScreen(
     state: EditorUiState,
@@ -98,6 +108,8 @@ fun EditorScreen(
     onColorChange: (NoteColor) -> Unit,
     onKindChange: (NoteKind) -> Unit,
     onSharedChange: (Boolean) -> Unit,
+    onSettingsClick: () -> Unit,
+    onSettingsDismiss: () -> Unit,
     checklist: ChecklistCallbacks,
     onSave: () -> Unit,
     onDeleteClick: () -> Unit,
@@ -120,21 +132,22 @@ fun EditorScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                // Tanpa ini inset nav bar dihitung dua kali saat keyboard muncul.
+                .consumeWindowInsets(innerPadding)
                 .imePadding()
                 .padding(horizontal = Spacing.screen, vertical = Spacing.medium)
         ) {
-            TopBar(state = state, onBack = onBack, onSave = onSave)
+            TopBar(state = state, onBack = onBack, onSave = onSave, onSettingsClick = onSettingsClick)
             NoteEditorCard(
                 state = state,
                 onContentChange = onContentChange,
                 checklist = checklist,
                 modifier = Modifier.weight(1f)
             )
-            if (state.canEdit) {
+            // Saat mengetik, seluruh ruang di atas keyboard dipakai untuk isi catatan.
+            if (state.canEdit && !WindowInsets.isImeVisible) {
                 NoteColorPicker(selected = state.color, onSelect = onColorChange)
-                KindSelector(selected = state.kind, onSelect = onKindChange)
             }
-            if (state.isMine && !state.isLoading) ShareSwitch(shared = state.shared, onChange = onSharedChange)
             if (!state.canEdit && !state.isLoading) {
                 Text(
                     stringResource(R.string.editor_read_only),
@@ -142,20 +155,24 @@ fun EditorScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            if (state.canDelete) {
-                DeleteButton(
-                    isDeleting = state.pendingAction == EditorAction.Delete,
-                    onClick = onDeleteClick
-                )
-            }
         }
     }
 
+    if (state.isSettingsOpen) {
+        NoteSettingsSheet(
+            state = state,
+            onKindChange = onKindChange,
+            onSharedChange = onSharedChange,
+            onDeleteClick = onDeleteClick,
+            onDismiss = onSettingsDismiss
+        )
+    }
     if (state.isDeleteConfirmOpen) DeleteDialog(onConfirm = onDeleteConfirm, onDismiss = onDeleteDismiss)
 }
 
 @Composable
-private fun TopBar(state: EditorUiState, onBack: () -> Unit, onSave: () -> Unit) {
+private fun TopBar(state: EditorUiState, onBack: () -> Unit, onSave: () -> Unit, onSettingsClick: () -> Unit) {
+    val focusManager = LocalFocusManager.current
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.small)) {
         FilledTonalIconButton(onClick = onBack, modifier = Modifier.size(Sizes.touchTarget)) {
             Icon(painterResource(R.drawable.ic_arrow_back), stringResource(R.string.common_back))
@@ -174,6 +191,16 @@ private fun TopBar(state: EditorUiState, onBack: () -> Unit, onSave: () -> Unit)
             }
         }
         if (state.canEdit) {
+            FilledTonalIconButton(
+                onClick = {
+                    // Tutup keyboard agar lembar pengaturan tidak tertimpa.
+                    focusManager.clearFocus()
+                    onSettingsClick()
+                },
+                modifier = Modifier.size(Sizes.touchTarget)
+            ) {
+                Icon(painterResource(R.drawable.ic_settings), stringResource(R.string.editor_settings))
+            }
             Button(onClick = onSave, enabled = !state.isBusy, modifier = Modifier.height(Sizes.touchTarget)) {
                 if (state.pendingAction == EditorAction.Save) {
                     CircularProgressIndicator(
@@ -199,44 +226,6 @@ data class ChecklistCallbacks(
     val onAdd: () -> Unit,
     val onRemove: (index: Int) -> Unit
 )
-
-@Composable
-private fun KindSelector(selected: NoteKind, onSelect: (NoteKind) -> Unit) {
-    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-        NoteKind.entries.forEachIndexed { index, kind ->
-            SegmentedButton(
-                selected = kind == selected,
-                onClick = { onSelect(kind) },
-                shape = SegmentedButtonDefaults.itemShape(index, NoteKind.entries.size)
-            ) {
-                Text(
-                    stringResource(
-                        if (kind == NoteKind.Checklist) R.string.editor_kind_checklist else R.string.editor_kind_text
-                    )
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ShareSwitch(shared: Boolean, onChange: (Boolean) -> Unit) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.toggleable(value = shared, role = Role.Switch, onValueChange = onChange)
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(stringResource(R.string.editor_share), style = MaterialTheme.typography.titleSmall)
-            Text(
-                stringResource(R.string.editor_share_body),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        // Baris sudah toggleable; switch hanya penanda agar tidak terbaca dua kali oleh pembaca layar.
-        Switch(checked = shared, onCheckedChange = null)
-    }
-}
 
 @Composable
 private fun NoteEditorCard(
@@ -351,31 +340,6 @@ private fun EditorMeta(state: EditorUiState, swatch: NoteSwatch) {
 }
 
 @Composable
-private fun DeleteButton(isDeleting: Boolean, onClick: () -> Unit) {
-    OutlinedButton(
-        onClick = onClick,
-        enabled = !isDeleting,
-        border = BorderStroke(Sizes.outlineThin, MaterialTheme.colorScheme.error),
-        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(Sizes.buttonHeight)
-    ) {
-        if (isDeleting) {
-            CircularProgressIndicator(
-                strokeWidth = Sizes.outlineThick,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.size(Sizes.progress)
-            )
-        } else {
-            Icon(painterResource(R.drawable.ic_delete), contentDescription = null, Modifier.size(Sizes.progress))
-            Spacer(Modifier.size(Spacing.small))
-            Text(stringResource(R.string.editor_delete), style = MaterialTheme.typography.labelLarge)
-        }
-    }
-}
-
-@Composable
 private fun DeleteDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -407,6 +371,8 @@ private fun EditorScreenPreview() {
             onColorChange = {},
             onKindChange = {},
             onSharedChange = {},
+            onSettingsClick = {},
+            onSettingsDismiss = {},
             checklist = ChecklistCallbacks({ _, _ -> }, { _, _ -> }, {}, {}),
             onSave = {},
             onDeleteClick = {},

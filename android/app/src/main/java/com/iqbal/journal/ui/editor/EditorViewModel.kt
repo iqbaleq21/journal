@@ -43,6 +43,7 @@ data class EditorUiState(
     val authorName: String? = null,
     val updatedAt: Instant? = null,
     val showEmptyError: Boolean = false,
+    val isSettingsOpen: Boolean = false,
     val isDeleteConfirmOpen: Boolean = false,
     val pendingAction: EditorAction? = null,
     val error: JournalError? = null,
@@ -199,11 +200,15 @@ class EditorViewModel @Inject constructor(
         }
     }
 
+    fun onSettingsClick() = _uiState.update { if (it.canEdit) it.copy(isSettingsOpen = true) else it }
+
+    fun onSettingsDismiss() = _uiState.update { it.copy(isSettingsOpen = false) }
+
     fun onDeleteClick() = _uiState.update {
         if (it.canDelete &&
             !it.isBusy
         ) {
-            it.copy(isDeleteConfirmOpen = true)
+            it.copy(isSettingsOpen = false, isDeleteConfirmOpen = true)
         } else {
             it
         }

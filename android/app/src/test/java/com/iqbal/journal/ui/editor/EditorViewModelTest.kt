@@ -126,6 +126,29 @@ class EditorViewModelTest {
     }
 
     @Test
+    fun `hapus dari pengaturan catatan menutup lembar pengaturan`() {
+        notes.notes.value = listOf(FakeNoteRepository.note(id = "n1"))
+        val viewModel = viewModel(noteId = "n1")
+
+        viewModel.onSettingsClick()
+        assertTrue(viewModel.uiState.value.isSettingsOpen)
+
+        viewModel.onDeleteClick()
+        assertFalse(viewModel.uiState.value.isSettingsOpen)
+        assertTrue(viewModel.uiState.value.isDeleteConfirmOpen)
+    }
+
+    @Test
+    fun `pengaturan catatan tidak terbuka untuk catatan yang hanya bisa dibaca`() {
+        notes.notes.value = listOf(FakeNoteRepository.note(id = "n1", authorId = "ibu"))
+        val viewModel = viewModel(noteId = "n1")
+
+        viewModel.onSettingsClick()
+
+        assertFalse(viewModel.uiState.value.isSettingsOpen)
+    }
+
+    @Test
     fun `hapus butuh konfirmasi lalu menutup layar`() {
         notes.notes.value = listOf(FakeNoteRepository.note(id = "n1"))
         val viewModel = viewModel(noteId = "n1")
