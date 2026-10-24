@@ -18,12 +18,20 @@ import com.iqbal.journal.domain.validation.NoteRules
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
 import javax.inject.Inject
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 enum class EditorAction { Save, Delete }
 
@@ -43,7 +51,6 @@ data class EditorUiState(
     val isMine: Boolean = true,
     val authorName: String? = null,
     val updatedAt: Instant? = null,
-    val showEmptyError: Boolean = false,
     val isSettingsOpen: Boolean = false,
     val isDeleteConfirmOpen: Boolean = false,
     val pendingAction: EditorAction? = null,
@@ -68,6 +75,7 @@ data class EditorUiState(
     val isBusy: Boolean get() = pendingAction != null
 }
 
+@OptIn(FlowPreview::class)
 // Satu fungsi per event UI (lihat CLAUDE.md), jadi jumlahnya mengikuti jumlah kontrol di Editor.
 @Suppress("TooManyFunctions")
 @HiltViewModel
@@ -80,13 +88,16 @@ class EditorViewModel @Inject constructor(
 
     // Nama kunci sama dengan properti EditorDestination (navigasi type-safe).
     private val groupId: String = checkNotNull(savedStateHandle[ARG_GROUP_ID])
-    private val noteId: String? = savedStateHandle[ARG_NOTE_ID]
+
+    /** Null sampai catatan baru tersimpan pertama kali oleh simpan otomatis. */
+    private var noteId: String? = savedStateHandle[ARG_NOTE_ID]
 
     private val _uiState = MutableStateFlow(EditorUiState(isNew = noteId == null, isLoading = noteId != null))
     val uiState: StateFlow<EditorUiState> = _uiState.asStateFlow()
 
     /** Versi tersimpan terakhir, untuk melewati simpan bila tidak ada perubahan. */
     private var saved: Note? = null
+    private val saveMutex = Mutex()
 
     init {
         viewModelScope.launch {
@@ -97,6 +108,9 @@ class EditorViewModel @Inject constructor(
             }
         }
         noteId?.let(::observeNote)
+        viewModelScope.launch {
+            uiState.map { it.draft }.distinctUntilChanged().debounce(AUTOSAVE_DELAY_MILLIS).collect { save() }
+        }
     }
 
     private fun observeNote(noteId: String) {
@@ -143,7 +157,7 @@ class EditorViewModel @Inject constructor(
     }
 
     fun onContentChange(content: String) = _uiState.update {
-        if (it.canEdit) it.copy(content = content.take(NoteRules.MAX_NOTE_LENGTH), showEmptyError = false) else it
+        if (it.canEdit) it.copy(content = content.take(NoteRules.MAX_NOTE_LENGTH)) else it
     }
 
     fun onColorChange(color: NoteColor) = _uiState.update { if (it.canEdit) it.copy(color = color) else it }
@@ -187,7 +201,7 @@ class EditorViewModel @Inject constructor(
     private fun updateItems(transform: (List<ChecklistItem>) -> List<ChecklistItem>) = _uiState.update {
         val items = transform(it.items)
         if (it.canEdit && Checklist.format(items).length <= NoteRules.MAX_NOTE_LENGTH) {
-            it.copy(items = items, showEmptyError = false)
+            it.copy(items = items)
         } else {
             it
         }
@@ -195,23 +209,51 @@ class EditorViewModel @Inject constructor(
 
     private fun String.oneLine() = replace('\n', ' ')
 
-    fun onSave() {
+    /** Kembali: perubahan terakhir disimpan dulu; catatan baru yang kosong dibuang. */
+    fun onLeave() {
         val state = _uiState.value
-        if (state.isBusy || !state.canEdit) return
-        val draft = state.draft
-        val current = saved
-        when {
-            !NoteRules.isValidContent(draft.content) -> _uiState.update { it.copy(showEmptyError = true) }
-
-            noteId == null -> run(EditorAction.Save) { noteRepository.create(groupId, draft) }
-
-            current != null &&
-                draft == NoteDraft(current.content, current.title, current.color, current.kind, current.shared) ->
-                _uiState.update { it.copy(isDone = true) }
-
-            else -> run(EditorAction.Save) { noteRepository.update(noteId, draft) }
+        if (state.isBusy) return
+        _uiState.update { it.copy(pendingAction = EditorAction.Save) }
+        viewModelScope.launch {
+            when (val result = save()) {
+                is Outcome.Failure -> _uiState.update { it.copy(pendingAction = null, error = result.error) }
+                else -> _uiState.update { it.copy(pendingAction = null, isDone = true) }
+            }
         }
     }
+
+    /**
+     * Null bila tidak ada yang perlu dikirim: tidak boleh diedit, tidak berubah, atau isi kosong (catatan lama
+     * yang dikosongkan tetap memakai versi tersimpan; hapus lewat Pengaturan catatan).
+     */
+    private suspend fun save(): Outcome<Note>? = withContext(NonCancellable) {
+        // Simpan otomatis dan tombol kembali bisa bersamaan; catatan baru tidak boleh terbuat dua kali.
+        saveMutex.withLock {
+            val state = _uiState.value
+            val draft = state.draft
+            val id = noteId
+            val current = saved
+            when {
+                !state.canEdit || !NoteRules.isValidContent(draft.content) -> null
+
+                id == null -> noteRepository.create(groupId, draft).also { result ->
+                    if (result is Outcome.Success) {
+                        // Diisi sebelum observasi agar ketikan setelah simpan tidak ditimpa isi dari cache.
+                        saved = result.value
+                        noteId = result.value.id
+                        _uiState.update { it.copy(isNew = false) }
+                        observeNote(result.value.id)
+                    }
+                }
+
+                current != null && draft == current.toDraft() -> null
+
+                else -> noteRepository.update(id, draft)
+            }?.also { result -> if (result is Outcome.Failure) _uiState.update { it.copy(error = result.error) } }
+        }
+    }
+
+    private fun Note.toDraft() = NoteDraft(content, title, color, kind, shared)
 
     fun onSettingsClick() = _uiState.update { if (it.canEdit) it.copy(isSettingsOpen = true) else it }
 
@@ -251,5 +293,8 @@ class EditorViewModel @Inject constructor(
     companion object {
         const val ARG_GROUP_ID = "groupId"
         const val ARG_NOTE_ID = "noteId"
+
+        /** Jeda setelah berhenti mengetik sebelum disimpan; tiap simpan mengirim push ke anggota grup. */
+        const val AUTOSAVE_DELAY_MILLIS = 1_500L
     }
 }

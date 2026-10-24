@@ -1,5 +1,6 @@
 package com.iqbal.journal.ui.editor
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -78,12 +79,14 @@ import com.iqbal.journal.ui.theme.swatchFor
 import java.time.Instant
 
 @Composable
-fun EditorRoute(onDone: () -> Unit, onBack: () -> Unit, viewModel: EditorViewModel = hiltViewModel()) {
+fun EditorRoute(onDone: () -> Unit, viewModel: EditorViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(state.isDone) { if (state.isDone) onDone() }
+    // Tanpa tombol Simpan: kembali (tombol atau gestur) menyimpan perubahan terakhir dulu.
+    BackHandler(onBack = viewModel::onLeave)
     EditorScreen(
         state = state,
-        onBack = onBack,
+        onBack = viewModel::onLeave,
         onTitleChange = viewModel::onTitleChange,
         onContentChange = viewModel::onContentChange,
         onColorChange = viewModel::onColorChange,
@@ -97,7 +100,6 @@ fun EditorRoute(onDone: () -> Unit, onBack: () -> Unit, viewModel: EditorViewMod
             onAdd = viewModel::onAddItem,
             onRemove = viewModel::onRemoveItem
         ),
-        onSave = viewModel::onSave,
         onDeleteClick = viewModel::onDeleteClick,
         onDeleteDismiss = viewModel::onDeleteDismiss,
         onDeleteConfirm = viewModel::onDeleteConfirm,
@@ -118,7 +120,6 @@ fun EditorScreen(
     onSettingsClick: () -> Unit,
     onSettingsDismiss: () -> Unit,
     checklist: ChecklistCallbacks,
-    onSave: () -> Unit,
     onDeleteClick: () -> Unit,
     onDeleteDismiss: () -> Unit,
     onDeleteConfirm: () -> Unit,
@@ -144,7 +145,7 @@ fun EditorScreen(
                 .imePadding()
                 .padding(horizontal = Spacing.screen, vertical = Spacing.medium)
         ) {
-            TopBar(state = state, onBack = onBack, onSave = onSave, onSettingsClick = onSettingsClick)
+            TopBar(state = state, onBack = onBack, onSettingsClick = onSettingsClick)
             NoteEditorCard(
                 state = state,
                 onTitleChange = onTitleChange,
@@ -179,7 +180,7 @@ fun EditorScreen(
 }
 
 @Composable
-private fun TopBar(state: EditorUiState, onBack: () -> Unit, onSave: () -> Unit, onSettingsClick: () -> Unit) {
+private fun TopBar(state: EditorUiState, onBack: () -> Unit, onSettingsClick: () -> Unit) {
     val focusManager = LocalFocusManager.current
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.small)) {
         FilledTonalIconButton(onClick = onBack, modifier = Modifier.size(Sizes.touchTarget)) {
@@ -208,17 +209,6 @@ private fun TopBar(state: EditorUiState, onBack: () -> Unit, onSave: () -> Unit,
                 modifier = Modifier.size(Sizes.touchTarget)
             ) {
                 Icon(painterResource(R.drawable.ic_settings), stringResource(R.string.editor_settings))
-            }
-            Button(onClick = onSave, enabled = !state.isBusy, modifier = Modifier.height(Sizes.touchTarget)) {
-                if (state.pendingAction == EditorAction.Save) {
-                    CircularProgressIndicator(
-                        strokeWidth = Sizes.outlineThick,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(Sizes.progress)
-                    )
-                } else {
-                    Text(stringResource(R.string.editor_save), style = MaterialTheme.typography.labelLarge)
-                }
             }
         } else {
             // Penyeimbang agar label grup tetap di tengah.
@@ -305,13 +295,6 @@ private fun NoteEditorCard(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
-                )
-            }
-            if (state.showEmptyError) {
-                Text(
-                    stringResource(R.string.editor_empty_error),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.error
                 )
             }
             EditorMeta(state = state, swatch = swatch)
@@ -426,7 +409,6 @@ private fun EditorScreenPreview() {
             onSettingsClick = {},
             onSettingsDismiss = {},
             checklist = ChecklistCallbacks({ _, _ -> }, { _, _ -> }, {}, {}),
-            onSave = {},
             onDeleteClick = {},
             onDeleteDismiss = {},
             onDeleteConfirm = {},

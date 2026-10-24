@@ -152,14 +152,18 @@ class FakeNoteRepository : NoteRepository {
         createCalls += groupId to draft.content
         lastDraft = draft
         writeFailure?.let { return it }
-        return Outcome.Success(note(id = "new", groupId = groupId, content = draft.content))
+        val created = note(id = "new", groupId = groupId, content = draft.content).withDraft(draft)
+        notes.value = notes.value + created
+        return Outcome.Success(created)
     }
 
     override suspend fun update(noteId: String, draft: NoteDraft): Outcome<Note> {
         updateCalls += noteId to draft.content
         lastDraft = draft
         writeFailure?.let { return it }
-        return Outcome.Success(note(id = noteId, content = draft.content))
+        val updated = (notes.value.firstOrNull { it.id == noteId } ?: note(id = noteId)).withDraft(draft)
+        notes.value = notes.value.filterNot { it.id == noteId } + updated
+        return Outcome.Success(updated)
     }
 
     override suspend fun delete(noteId: String): Outcome<Unit> {
@@ -173,6 +177,14 @@ class FakeNoteRepository : NoteRepository {
         onSubscribed()
         return Outcome.Success(Unit)
     }
+
+    private fun Note.withDraft(draft: NoteDraft) = copy(
+        content = draft.content,
+        title = draft.title,
+        color = draft.color,
+        kind = draft.kind,
+        shared = draft.shared
+    )
 
     companion object {
         fun note(

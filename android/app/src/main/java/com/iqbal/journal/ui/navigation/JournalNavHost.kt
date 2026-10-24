@@ -89,7 +89,7 @@ fun JournalNavHost(
             SettingsRoute(onBack = { navController.navigateBack() })
         }
         composable<EditorDestination> {
-            EditorRoute(onDone = { navController.navigateBack() }, onBack = { navController.navigateBack() })
+            EditorRoute(onDone = { navController.navigateBack() })
         }
     }
 }

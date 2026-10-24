@@ -12,6 +12,7 @@ import com.iqbal.journal.testing.FakeGroupRepository
 import com.iqbal.journal.testing.FakeNoteRepository
 import com.iqbal.journal.testing.FakeProfileRepository
 import com.iqbal.journal.testing.MainDispatcherRule
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -39,7 +40,7 @@ class EditorViewModelTest {
         assertEquals("Rumah", viewModel.uiState.value.groupName)
 
         viewModel.onContentChange("  Galon habis  ")
-        viewModel.onSave()
+        viewModel.onLeave()
 
         assertEquals(listOf("g1" to "Galon habis"), notes.createCalls)
         assertTrue(viewModel.uiState.value.isDone)
@@ -51,7 +52,7 @@ class EditorViewModelTest {
         val viewModel = viewModel(noteId = "n1")
 
         viewModel.onColorChange(NoteColor.Peach)
-        viewModel.onSave()
+        viewModel.onLeave()
 
         assertEquals(listOf("n1" to "Galon habis"), notes.updateCalls)
         assertEquals(NoteColor.Peach, notes.lastColor)
@@ -68,13 +69,50 @@ class EditorViewModelTest {
     }
 
     @Test
-    fun `catatan kosong tidak dikirim ke server`() {
+    fun `catatan baru yang kosong dibuang saat kembali`() {
         val viewModel = viewModel()
         viewModel.onContentChange("   ")
-        viewModel.onSave()
+        viewModel.onLeave()
 
-        assertTrue(viewModel.uiState.value.showEmptyError)
+        assertTrue(viewModel.uiState.value.isDone)
         assertTrue(notes.createCalls.isEmpty())
+    }
+
+    @Test
+    fun `ketikan disimpan otomatis setelah jeda, sekali buat lalu update`() {
+        val viewModel = viewModel()
+        viewModel.onContentChange("Galon")
+        viewModel.onContentChange("Galon habis")
+        assertTrue(notes.createCalls.isEmpty())
+
+        advanceBy(EditorViewModel.AUTOSAVE_DELAY_MILLIS)
+        assertEquals(listOf("g1" to "Galon habis"), notes.createCalls)
+        assertFalse(viewModel.uiState.value.isNew)
+
+        viewModel.onContentChange("Galon habis, beli 2")
+        advanceBy(EditorViewModel.AUTOSAVE_DELAY_MILLIS)
+        assertEquals(listOf("new" to "Galon habis, beli 2"), notes.updateCalls)
+        assertEquals("Galon habis, beli 2", viewModel.uiState.value.content)
+        assertFalse(viewModel.uiState.value.isDone)
+    }
+
+    @Test
+    fun `kembali setelah simpan otomatis tidak mengirim ulang`() {
+        val viewModel = viewModel()
+        viewModel.onContentChange("Galon habis")
+        advanceBy(EditorViewModel.AUTOSAVE_DELAY_MILLIS)
+
+        viewModel.onLeave()
+
+        assertEquals(1, notes.createCalls.size)
+        assertTrue(notes.updateCalls.isEmpty())
+        assertTrue(viewModel.uiState.value.isDone)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun advanceBy(millis: Long) {
+        mainDispatcherRule.dispatcher.scheduler.advanceTimeBy(millis + 1)
+        mainDispatcherRule.dispatcher.scheduler.runCurrent()
     }
 
     @Test
@@ -92,7 +130,7 @@ class EditorViewModelTest {
         assertTrue(viewModel.uiState.value.canEdit)
         assertEquals("Galon habis", viewModel.uiState.value.content)
 
-        viewModel.onSave()
+        viewModel.onLeave()
         assertTrue(notes.updateCalls.isEmpty())
         assertTrue(viewModel.uiState.value.isDone)
     }
@@ -103,7 +141,7 @@ class EditorViewModelTest {
         val viewModel = viewModel(noteId = "n1")
 
         viewModel.onContentChange("Galon sudah dipesan")
-        viewModel.onSave()
+        viewModel.onLeave()
 
         assertEquals(listOf("n1" to "Galon sudah dipesan"), notes.updateCalls)
     }
@@ -114,7 +152,7 @@ class EditorViewModelTest {
         val viewModel = viewModel(noteId = "n1")
 
         viewModel.onContentChange("diubah")
-        viewModel.onSave()
+        viewModel.onLeave()
         viewModel.onDeleteClick()
 
         val state = viewModel.uiState.value
@@ -167,7 +205,7 @@ class EditorViewModelTest {
         notes.writeFailure = Outcome.Failure(JournalError.Network)
         val viewModel = viewModel()
         viewModel.onContentChange("Galon habis")
-        viewModel.onSave()
+        viewModel.onLeave()
 
         val state = viewModel.uiState.value
         assertEquals(JournalError.Network, state.error)
@@ -193,7 +231,7 @@ class EditorViewModelTest {
 
         viewModel.onSharedChange(false)
         viewModel.onContentChange("Galon sudah dipesan")
-        viewModel.onSave()
+        viewModel.onLeave()
 
         assertFalse(viewModel.uiState.value.canDelete)
         assertEquals(listOf("n1" to "Galon sudah dipesan"), notes.updateCalls)
@@ -207,7 +245,7 @@ class EditorViewModelTest {
 
         viewModel.onKindChange(NoteKind.Checklist)
         viewModel.onItemCheckedChange(0, true)
-        viewModel.onSave()
+        viewModel.onLeave()
 
         assertEquals(
             listOf(ChecklistItem("Susu", checked = true), ChecklistItem("Roti")),
@@ -223,7 +261,7 @@ class EditorViewModelTest {
         viewModel.onTitleChange(" Belanja\n" + "a".repeat(NoteRules.MAX_TITLE_LENGTH))
         viewModel.onContentChange("Susu")
 
-        viewModel.onSave()
+        viewModel.onLeave()
 
         assertEquals(NoteRules.MAX_TITLE_LENGTH, viewModel.uiState.value.title.length)
         assertEquals(
