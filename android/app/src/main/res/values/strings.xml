@@ -71,6 +71,7 @@
     <string name="color_lilac">Ungu</string>
     <string name="color_plain">Putih</string>
     <string name="editor_label">CATATAN</string>
+    <string name="editor_title_placeholder">Judul</string>
     <string name="editor_placeholder">Tulis sesuatu untuk grupmu…</string>
     <string name="editor_new">Catatan baru</string>
     <string name="editor_by_you">Ditulis oleh kamu · %1$s</string>

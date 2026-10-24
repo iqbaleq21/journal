@@ -218,6 +218,21 @@ class EditorViewModelTest {
     }
 
     @Test
+    fun `judul satu baris dipotong di batas panjang dan disimpan tanpa spasi tepi`() {
+        val viewModel = viewModel()
+        viewModel.onTitleChange(" Belanja\n" + "a".repeat(NoteRules.MAX_TITLE_LENGTH))
+        viewModel.onContentChange("Susu")
+
+        viewModel.onSave()
+
+        assertEquals(NoteRules.MAX_TITLE_LENGTH, viewModel.uiState.value.title.length)
+        assertEquals(
+            ("Belanja " + "a".repeat(NoteRules.MAX_TITLE_LENGTH)).take(NoteRules.MAX_TITLE_LENGTH - 1),
+            notes.lastDraft?.title
+        )
+    }
+
+    @Test
     fun `item checklist tidak bisa membuat isi melebihi batas panjang`() {
         val viewModel = viewModel()
         viewModel.onKindChange(NoteKind.Checklist)

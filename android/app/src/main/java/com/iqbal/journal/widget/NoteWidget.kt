@@ -90,6 +90,7 @@ private val WideMinWidth = 250.dp
 private val TallMinHeight = 200.dp
 private const val CONTENT_SIZE_SMALL = 18
 private const val CONTENT_SIZE_LARGE = 22
+private const val BODY_UNDER_TITLE_SIZE_DROP = 4
 private const val META_SIZE = 12
 private const val MESSAGE_SIZE = 14
 private const val MAX_LINES_SHORT = 3
@@ -164,16 +165,32 @@ private fun NoteContent(state: NoteWidgetState.Showing, appWidgetId: Int) {
             .clickable(actionStartActivity(context.openNoteIntent(NoteLink(note.groupId, note.id))))
     ) {
         Row(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
-            Text(
-                text = note.previewText,
-                maxLines = if (size.height >= TallMinHeight) MAX_LINES_TALL else MAX_LINES_SHORT,
-                style = TextStyle(
-                    color = inkColor(),
-                    fontSize = (if (isWide) CONTENT_SIZE_LARGE else CONTENT_SIZE_SMALL).sp,
-                    fontWeight = FontWeight.Bold
-                ),
-                modifier = GlanceModifier.defaultWeight()
-            )
+            val contentSize = if (isWide) CONTENT_SIZE_LARGE else CONTENT_SIZE_SMALL
+            val maxLines = if (size.height >= TallMinHeight) MAX_LINES_TALL else MAX_LINES_SHORT
+            Column(modifier = GlanceModifier.defaultWeight()) {
+                if (note.title.isNotEmpty()) {
+                    Text(
+                        text = note.title,
+                        maxLines = 1,
+                        style = TextStyle(color = inkColor(), fontSize = contentSize.sp, fontWeight = FontWeight.Bold)
+                    )
+                    Spacer(GlanceModifier.height(SmallGap))
+                }
+                // Dengan judul, isi jadi teks pendukung yang lebih kecil, seperti kartu di Beranda.
+                Text(
+                    text = note.previewText,
+                    maxLines = if (note.title.isNotEmpty()) maxLines - 1 else maxLines,
+                    style = if (note.title.isNotEmpty()) {
+                        TextStyle(
+                            color = inkColor(),
+                            fontSize = (contentSize - BODY_UNDER_TITLE_SIZE_DROP).sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    } else {
+                        TextStyle(color = inkColor(), fontSize = contentSize.sp, fontWeight = FontWeight.Bold)
+                    }
+                )
+            }
             // Android 12+ memakai "Atur ulang" dari launcher; versi lama butuh tombol sendiri (PRD §5.4).
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
                 Image(

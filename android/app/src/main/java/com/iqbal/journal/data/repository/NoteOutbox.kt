@@ -88,7 +88,7 @@ class NoteOutbox @Inject constructor(
         if (saved != null && !pendingOpDao.hasPending(op.noteId)) noteDao.upsert(saved.toEntity())
     }
 
-    private fun PendingOpEntity.fields() = NoteFieldsDto(checkNotNull(content), color, kind, shared)
+    private fun PendingOpEntity.fields() = NoteFieldsDto(checkNotNull(content), color, kind, shared, title)
 
     private suspend fun resync(noteId: String) {
         if (pendingOpDao.hasPending(noteId)) return

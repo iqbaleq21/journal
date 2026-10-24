@@ -49,6 +49,7 @@ data class NoteDto(
     val color: String? = null,
     val kind: String = "text",
     val shared: Boolean = false,
+    val title: String = "",
     @SerialName("created_at") val createdAt: String,
     @SerialName("updated_at") val updatedAt: String,
     @SerialName("deleted_at") val deletedAt: String? = null
@@ -56,7 +57,13 @@ data class NoteDto(
 
 /** Kolom catatan yang bisa diubah; dikirim apa adanya saat update. */
 @Serializable
-data class NoteFieldsDto(val content: String, val color: String?, val kind: String, val shared: Boolean)
+data class NoteFieldsDto(
+    val content: String,
+    val color: String?,
+    val kind: String,
+    val shared: Boolean,
+    val title: String
+)
 
 @Serializable
 data class NewNoteDto(
@@ -67,7 +74,8 @@ data class NewNoteDto(
     val content: String,
     val color: String?,
     val kind: String,
-    val shared: Boolean
+    val shared: Boolean,
+    val title: String
 )
 
 /** Hanya kolom id; isi `old_record` Realtime untuk hard delete (replica identity default). */

@@ -53,8 +53,10 @@ class NoteOutboxTest {
     @Test
     fun `antrean dikirim berurutan dan versi server disimpan setelah operasi terakhir`() = runTest {
         queue += listOf(op(1, "n1", PendingOpType.Create, "awal", "mint"), op(2, "n1", PendingOpType.Update, "akhir"))
-        coEvery { remote.insert("n1", "g1", NoteFieldsDto("awal", "mint", "text", false)) } returns dto("n1", "awal")
-        coEvery { remote.updateContent("n1", NoteFieldsDto("akhir", null, "text", false)) } returns dto("n1", "akhir")
+        coEvery { remote.insert("n1", "g1", NoteFieldsDto("awal", "mint", "text", false, "")) } returns
+            dto("n1", "awal")
+        coEvery { remote.updateContent("n1", NoteFieldsDto("akhir", null, "text", false, "")) } returns
+            dto("n1", "akhir")
 
         assertTrue(outbox.flush())
 
@@ -79,7 +81,7 @@ class NoteOutboxTest {
     @Test
     fun `ditolak server dibuang lalu cache memakai versi server`() = runTest {
         queue += op(1, "n1", PendingOpType.Update, "ditolak")
-        coEvery { remote.updateContent("n1", NoteFieldsDto("ditolak", null, "text", false)) } throws
+        coEvery { remote.updateContent("n1", NoteFieldsDto("ditolak", null, "text", false, "")) } throws
             mockk<RestException>(relaxed = true)
         coEvery { remote.fetchByIds(listOf("n1")) } returns listOf(dto("n1", "versi server"))
 
@@ -92,7 +94,7 @@ class NoteOutboxTest {
     @Test
     fun `update yang tidak mengenai baris (akses berbagi dicabut) dibuang, bukan diulang terus`() = runTest {
         queue += op(1, "n1", PendingOpType.Update, "telat")
-        coEvery { remote.updateContent("n1", NoteFieldsDto("telat", null, "text", false)) } returns null
+        coEvery { remote.updateContent("n1", NoteFieldsDto("telat", null, "text", false, "")) } returns null
         coEvery { remote.fetchByIds(listOf("n1")) } returns listOf(dto("n1", "versi server"))
 
         assertTrue(outbox.flush())

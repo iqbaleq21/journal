@@ -29,6 +29,7 @@ enum class EditorAction { Save, Delete }
 
 data class EditorUiState(
     val groupName: String = "",
+    val title: String = "",
     /** Isi mode teks. */
     val content: String = "",
     /** Isi mode checklist. */
@@ -57,7 +58,13 @@ data class EditorUiState(
     val body: String
         get() = if (kind == NoteKind.Checklist) Checklist.format(items) else NoteRules.normalizeContent(content)
 
-    val draft: NoteDraft get() = NoteDraft(content = body, color = color, kind = kind, shared = shared)
+    val draft: NoteDraft get() = NoteDraft(
+        content = body,
+        title = NoteRules.normalizeTitle(title),
+        color = color,
+        kind = kind,
+        shared = shared
+    )
     val isBusy: Boolean get() = pendingAction != null
 }
 
@@ -110,6 +117,7 @@ class EditorViewModel @Inject constructor(
                         it
                     } else {
                         it.copy(
+                            title = note.title,
                             content = note.content,
                             items = Checklist.parse(note.content),
                             kind = note.kind,
@@ -128,6 +136,10 @@ class EditorViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun onTitleChange(title: String) = _uiState.update {
+        if (it.canEdit) it.copy(title = title.replace('\n', ' ').take(NoteRules.MAX_TITLE_LENGTH)) else it
     }
 
     fun onContentChange(content: String) = _uiState.update {
@@ -193,7 +205,8 @@ class EditorViewModel @Inject constructor(
 
             noteId == null -> run(EditorAction.Save) { noteRepository.create(groupId, draft) }
 
-            current != null && draft == NoteDraft(current.content, current.color, current.kind, current.shared) ->
+            current != null &&
+                draft == NoteDraft(current.content, current.title, current.color, current.kind, current.shared) ->
                 _uiState.update { it.copy(isDone = true) }
 
             else -> run(EditorAction.Save) { noteRepository.update(noteId, draft) }

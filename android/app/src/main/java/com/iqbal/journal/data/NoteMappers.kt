@@ -20,6 +20,7 @@ internal fun NoteDto.toEntity() = NoteEntity(
     color = color,
     kind = kind,
     shared = shared,
+    title = title,
     createdAtEpochMillis = parseTimestampMillis(createdAt),
     updatedAtEpochMillis = parseTimestampMillis(updatedAt)
 )
@@ -33,6 +34,7 @@ internal fun NoteWithAuthor.toDomain() = Note(
     color = noteColorOf(note.color),
     kind = noteKindOf(note.kind),
     shared = note.shared,
+    title = note.title,
     createdAt = Instant.ofEpochMilli(note.createdAtEpochMillis),
     updatedAt = Instant.ofEpochMilli(note.updatedAtEpochMillis),
     isPending = isPending

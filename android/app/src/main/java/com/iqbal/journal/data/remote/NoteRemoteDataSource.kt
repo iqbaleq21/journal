@@ -65,7 +65,8 @@ class NoteRemoteDataSource @Inject constructor(private val client: SupabaseClien
                 content = fields.content,
                 color = fields.color,
                 kind = fields.kind,
-                shared = fields.shared
+                shared = fields.shared,
+                title = fields.title
             )
         ) {
             select()

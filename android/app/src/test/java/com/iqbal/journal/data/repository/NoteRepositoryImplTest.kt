@@ -199,7 +199,12 @@ class NoteRepositoryImplTest {
         every { noteDao.observeById(any()) } answers
             { flowOf(NoteWithAuthor(saved.captured, "Ayah", isPending = true)) }
 
-        val note = (repository.create("g1", NoteDraft("  Galon habis ", NoteColor.Mint)) as Outcome.Success).value
+        val note = (
+            repository.create(
+                "g1",
+                NoteDraft("  Galon habis ", color = NoteColor.Mint)
+            ) as Outcome.Success
+            ).value
 
         assertEquals("Galon habis", note.content)
         assertEquals("me", note.authorId)

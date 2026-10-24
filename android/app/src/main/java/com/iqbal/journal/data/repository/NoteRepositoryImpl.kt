@@ -73,6 +73,7 @@ class NoteRepositoryImpl @Inject constructor(
             color = draft.color.toKey(),
             kind = draft.kind.toKey(),
             shared = draft.shared,
+            title = NoteRules.normalizeTitle(draft.title),
             createdAtEpochMillis = now,
             updatedAtEpochMillis = now
         )
@@ -87,6 +88,7 @@ class NoteRepositoryImpl @Inject constructor(
                 color = draft.color.toKey(),
                 kind = draft.kind.toKey(),
                 shared = draft.shared,
+                title = NoteRules.normalizeTitle(draft.title),
                 updatedAtEpochMillis = clock.millis()
             ),
             PendingOpType.Update
@@ -143,7 +145,8 @@ class NoteRepositoryImpl @Inject constructor(
                 content = note.content,
                 color = note.color,
                 kind = note.kind,
-                shared = note.shared
+                shared = note.shared,
+                title = note.title
             )
         )
         outbox.flush()

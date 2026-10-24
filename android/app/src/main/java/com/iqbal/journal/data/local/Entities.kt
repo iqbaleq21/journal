@@ -48,6 +48,8 @@ data class NoteEntity(
     /** Kunci bentuk isi dari database (`text`, `checklist`). */
     @ColumnInfo(defaultValue = "text") val kind: String = NOTE_KIND_TEXT,
     @ColumnInfo(defaultValue = "0") val shared: Boolean = false,
+    /** Kosong = tanpa judul. */
+    @ColumnInfo(defaultValue = "") val title: String = "",
     @ColumnInfo(name = "created_at") val createdAtEpochMillis: Long,
     @ColumnInfo(name = "updated_at") val updatedAtEpochMillis: Long
 )
@@ -78,7 +80,8 @@ data class PendingOpEntity(
     /** Kunci warna untuk Create/Update; null = warna bawaan. */
     @ColumnInfo(defaultValue = "NULL") val color: String? = null,
     @ColumnInfo(defaultValue = "text") val kind: String = NOTE_KIND_TEXT,
-    @ColumnInfo(defaultValue = "0") val shared: Boolean = false
+    @ColumnInfo(defaultValue = "0") val shared: Boolean = false,
+    @ColumnInfo(defaultValue = "") val title: String = ""
 )
 
 /** Pilihan catatan per widget. Catatan di sini tidak ikut dibuang oleh batas cache per grup. */

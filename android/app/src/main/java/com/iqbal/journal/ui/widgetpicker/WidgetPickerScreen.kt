@@ -245,7 +245,7 @@ private fun NoteList(
                 ChoiceRow(
                     isSelected = !followsLatest && note.id == selectedNoteId,
                     onClick = { onSelect(note.id) },
-                    title = note.previewText,
+                    title = note.title.ifEmpty { note.previewText },
                     subtitle = stringResource(
                         R.string.widget_meta,
                         authorLabel(note, myUserId),

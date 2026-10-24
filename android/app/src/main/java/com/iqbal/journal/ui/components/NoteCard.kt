@@ -34,6 +34,7 @@ import java.time.Instant
 /** Catatan pendek tampil besar seperti kertas tempel; yang panjang memakai teks biasa. */
 private const val SHORT_NOTE_MAX_LENGTH = 40
 private const val PREVIEW_MAX_LINES = 8
+private const val TITLE_MAX_LINES = 2
 private const val AVATAR_ALPHA = 0.12f
 private const val BADGE_ALPHA = 0.09f
 
@@ -54,9 +55,18 @@ fun NoteCard(note: Note, isMine: Boolean, isOnWidget: Boolean, onClick: () -> Un
     ) {
         Column(Modifier.padding(Spacing.medium), verticalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
             if (isOnWidget) WidgetBadge()
+            if (note.title.isNotEmpty()) {
+                Text(
+                    text = note.title,
+                    style = MaterialTheme.typography.titleLarge,
+                    maxLines = TITLE_MAX_LINES,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
             Text(
                 text = note.previewText,
-                style = if (note.previewText.length <= SHORT_NOTE_MAX_LENGTH) {
+                // Dengan judul, isi selalu teks biasa agar judul tetap yang paling menonjol.
+                style = if (note.title.isEmpty() && note.previewText.length <= SHORT_NOTE_MAX_LENGTH) {
                     MaterialTheme.typography.headlineSmall
                 } else {
                     MaterialTheme.typography.bodyMedium
@@ -124,6 +134,7 @@ private fun NoteCardPreview() {
         groupId = "g1",
         authorId = "a",
         authorName = "Ibu",
+        title = "Les Kiara",
         content = "Jemput Kiara jam 3 sore, Kamis ini Ayah ya.",
         color = NoteColor.Sky,
         createdAt = Instant.now(),

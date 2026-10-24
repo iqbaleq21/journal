@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -46,14 +47,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -80,6 +84,7 @@ fun EditorRoute(onDone: () -> Unit, onBack: () -> Unit, viewModel: EditorViewMod
     EditorScreen(
         state = state,
         onBack = onBack,
+        onTitleChange = viewModel::onTitleChange,
         onContentChange = viewModel::onContentChange,
         onColorChange = viewModel::onColorChange,
         onKindChange = viewModel::onKindChange,
@@ -105,6 +110,7 @@ fun EditorRoute(onDone: () -> Unit, onBack: () -> Unit, viewModel: EditorViewMod
 fun EditorScreen(
     state: EditorUiState,
     onBack: () -> Unit,
+    onTitleChange: (String) -> Unit,
     onContentChange: (String) -> Unit,
     onColorChange: (NoteColor) -> Unit,
     onKindChange: (NoteKind) -> Unit,
@@ -141,6 +147,7 @@ fun EditorScreen(
             TopBar(state = state, onBack = onBack, onSave = onSave, onSettingsClick = onSettingsClick)
             NoteEditorCard(
                 state = state,
+                onTitleChange = onTitleChange,
                 onContentChange = onContentChange,
                 checklist = checklist,
                 modifier = Modifier.weight(1f)
@@ -231,14 +238,15 @@ data class ChecklistCallbacks(
 @Composable
 private fun NoteEditorCard(
     state: EditorUiState,
+    onTitleChange: (String) -> Unit,
     onContentChange: (String) -> Unit,
     checklist: ChecklistCallbacks,
     modifier: Modifier = Modifier
 ) {
     val swatch = JournalTheme.noteColors.swatchFor(state.color)
     val focusRequester = remember { FocusRequester() }
-    // Catatan baru langsung siap diketik.
-    LaunchedEffect(state.isNew) { if (state.isNew && state.kind == NoteKind.Text) focusRequester.requestFocus() }
+    // Catatan baru langsung siap diketik, mulai dari judul.
+    LaunchedEffect(state.isNew) { if (state.isNew) focusRequester.requestFocus() }
 
     Surface(
         shape = MaterialTheme.shapes.extraLarge,
@@ -253,6 +261,13 @@ private fun NoteEditorCard(
                 stringResource(R.string.editor_label),
                 style = MaterialTheme.typography.labelSmall,
                 color = swatch.onContainerMuted
+            )
+            TitleField(
+                title = state.title,
+                canEdit = state.canEdit,
+                mutedColor = swatch.onContainerMuted,
+                onTitleChange = onTitleChange,
+                modifier = Modifier.focusRequester(focusRequester)
             )
             if (state.kind == NoteKind.Checklist) {
                 ChecklistEditor(
@@ -272,7 +287,7 @@ private fun NoteEditorCard(
                     value = state.content,
                     onValueChange = onContentChange,
                     readOnly = !state.canEdit,
-                    textStyle = MaterialTheme.typography.headlineMedium.copy(
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(
                         color = MaterialTheme.colorScheme.onSurface
                     ),
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
@@ -281,7 +296,7 @@ private fun NoteEditorCard(
                         if (state.content.isEmpty()) {
                             Text(
                                 stringResource(R.string.editor_placeholder),
-                                style = MaterialTheme.typography.headlineMedium,
+                                style = MaterialTheme.typography.bodyLarge,
                                 color = swatch.onContainerMuted
                             )
                         }
@@ -290,7 +305,6 @@ private fun NoteEditorCard(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
-                        .focusRequester(focusRequester)
                 )
             }
             if (state.showEmptyError) {
@@ -303,6 +317,43 @@ private fun NoteEditorCard(
             EditorMeta(state = state, swatch = swatch)
         }
     }
+}
+
+/** Judul opsional; tidak ditampilkan pada catatan orang lain yang tanpa judul. */
+@Composable
+private fun TitleField(
+    title: String,
+    canEdit: Boolean,
+    mutedColor: Color,
+    onTitleChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (!canEdit && title.isEmpty()) return
+    val focusManager = LocalFocusManager.current
+    BasicTextField(
+        value = title,
+        onValueChange = onTitleChange,
+        readOnly = !canEdit,
+        singleLine = true,
+        textStyle = MaterialTheme.typography.headlineLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+        keyboardOptions = KeyboardOptions(
+            capitalization = KeyboardCapitalization.Sentences,
+            imeAction = ImeAction.Next
+        ),
+        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+        decorationBox = { innerTextField ->
+            if (title.isEmpty()) {
+                Text(
+                    stringResource(R.string.editor_title_placeholder),
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = mutedColor
+                )
+            }
+            innerTextField()
+        },
+        modifier = modifier.fillMaxWidth()
+    )
 }
 
 @Composable
@@ -360,12 +411,14 @@ private fun EditorScreenPreview() {
         EditorScreen(
             state = EditorUiState(
                 groupName = "Rumah",
+                title = "Wifi",
                 content = "Kode wifi rumah: rumahbahagia2026",
                 color = NoteColor.Butter,
                 isNew = false,
                 updatedAt = Instant.now()
             ),
             onBack = {},
+            onTitleChange = {},
             onContentChange = {},
             onColorChange = {},
             onKindChange = {},
