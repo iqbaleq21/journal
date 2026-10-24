@@ -12,6 +12,7 @@
 Dokumen ini adalah sumber kebenaran untuk scope dan arsitektur. Kalau implementasi menyimpang dari dokumen ini, perbarui dokumen ini dulu.
 
 **Riwayat perubahan**
+- v0.7: Judul catatan opsional (US-20), simpan otomatis tanpa tombol Simpan (US-21), pilihan bahasa Indonesia/English di Pengaturan (US-22).
 - v0.6: Catatan mode checklist (US-17), berbagi akses edit per catatan (US-18), dan pilihan tema terang/gelap di Pengaturan (US-19).
 - v0.5: Tidak ada logout di Pengaturan: akun anonim yang di-logout tidak bisa dipulihkan. Diganti peringatan bahwa identitas terikat ke HP ini (§5.1, §9).
 - v0.4: Login Google dihapus. Diganti profil sederhana (**nama + email**) di atas **Supabase Anonymous Sign-In** (§5.1).
@@ -72,6 +73,9 @@ Aplikasi catatan untuk **sekelompok kecil orang yang saling terhubung** (pasanga
 | US-17 | menulis catatan sebagai checklist yang bisa dicentang, bukan hanya teks bebas | P2 |
 | US-18 | mengizinkan anggota lain mengedit catatan saya, dan mencabutnya lagi | P2 |
 | US-19 | memilih tema terang, gelap, atau ikut sistem | P2 |
+| US-20 | memberi judul pada catatan (opsional) | P2 |
+| US-21 | catatan tersimpan otomatis selagi mengetik, tanpa tombol Simpan | P2 |
+| US-22 | memilih bahasa app (Indonesia / English) | P2 |
 
 ## 5. Kebutuhan Fungsional
 
@@ -95,7 +99,9 @@ Aplikasi catatan untuk **sekelompok kecil orang yang saling terhubung** (pasanga
 
 ### 5.3 Catatan
 - Isi: teks polos, maks **500 karakter**.
+- Judul (US-20, `notes.title`): opsional, satu baris, maks **60 karakter**, tidak dihitung dalam batas isi. String kosong = tanpa judul; catatan tanpa judul tampil seperti sebelumnya. Kartu, Editor, widget, dan daftar Pilih widget menampilkan judul di atas isi.
 - Mode (`notes.kind`): **teks** atau **checklist** (US-17). Checklist disimpan di `content` sebagai teks, satu item per baris (`[ ] item` / `[x] item`), jadi batas 500 karakter termasuk penandanya. Mengganti mode membawa isinya: tiap baris jadi item, atau sebaliknya. Widget, kartu, dan notifikasi menampilkan ☐/☑; centang hanya lewat app.
+- Simpan otomatis (US-21): perubahan apa pun di Editor (judul, isi, warna, mode, centang, akses) disimpan **1,5 detik** setelah berhenti mengetik, dan langsung saat menekan kembali. Catatan baru dibuat pada simpan pertama, lalu di-update. Catatan baru yang kosong dibuang; catatan lama yang isinya dikosongkan tidak disimpan (versi terakhir tetap; hapus lewat Pengaturan catatan). Setiap simpan memicu push ke anggota lain (§5.5).
 - Siapa pun di grup bisa membaca. Hanya **penulis** yang bisa menghapus.
 - Berbagi akses (US-18): penulis menyalakan "Anggota lain boleh mengedit" (`notes.shared`) per catatan. Jika aktif, semua anggota grup bisa mengubah isi, warna, mode, dan centang. Menghapus dan mengatur akses tetap hak penulis (dijaga trigger `NOTE_AUTHOR_ONLY`). Edit bersamaan: yang terakhir menang. Edit offline yang tiba setelah akses dicabut ditolak dan diganti versi server.
 - Hapus = soft delete (`deleted_at`) agar penghapusan ikut tersinkron ke HP lain.
@@ -244,6 +250,7 @@ create table notes (
   group_id    uuid not null references groups(id),
   author_id   uuid not null references auth.users,
   content     text not null check (char_length(content) between 1 and 500),
+  title       text not null default '',         -- opsional, maks 60 (US-20)
   color       text,                             -- P2
   kind        text not null default 'text',     -- 'text' | 'checklist'
   shared      boolean not null default false,   -- anggota lain boleh mengedit
@@ -291,9 +298,9 @@ select cron.schedule('purge-deleted-notes', '0 3 * * *',
 1. **Kenalan**: isi nama & email, tombol "Mulai".
 2. **Awal (tanpa grup)**: "Buat grup" / "Gabung dengan kode".
 3. **Beranda**: pemilih grup di atas (dropdown / tab), daftar catatan grup, FAB "Tulis".
-4. **Editor**: textarea, counter 0/500, simpan / hapus.
+4. **Editor**: judul opsional, textarea, counter 0/500, simpan otomatis (tanpa tombol Simpan), hapus.
 5. **Detail grup**: nama, daftar anggota, kode undangan + share, keluar grup; aksi owner.
-6. **Pengaturan**: ubah nama & email, tema (ikut sistem / terang / gelap; berlaku juga untuk widget), notifikasi per grup, tips optimasi baterai, peringatan identitas terikat ke HP ini. Tanpa logout (lihat riwayat v0.5).
+6. **Pengaturan**: ubah nama & email, tema (ikut sistem / terang / gelap; berlaku juga untuk widget), bahasa (US-22: Indonesia / English, bawaan Indonesia meski HP berbahasa Inggris; disimpan di DataStore dan diterapkan lewat `AppCompatDelegate`; di Android < 13 widget & notifikasi tetap memakai bahasa sistem), notifikasi per grup, tips optimasi baterai, peringatan identitas terikat ke HP ini. Tanpa logout (lihat riwayat v0.5).
 7. **Konfigurasi widget**: pilih grup → pilih catatan.
 8. **Widget**: satu catatan terpilih.
 
@@ -309,6 +316,7 @@ select cron.schedule('purge-deleted-notes', '0 3 * * *',
 | M5 | Polish | US-12, US-13, US-14, state kosong/error, ikon | APK release ditandatangani & dibagikan | ✅ 2026-10-18 (APK release 4,1 MB, R8 aktif, diuji di emulator: Kenalan, gabung, tulis, Realtime, push saat app mati). Membagikan APK ke anggota dilakukan pemilik. |
 | M6 | Nice to have | US-15, US-16 | — | ✅ 2026-10-18 (warna tersimpan di server & widget; widget mode "terbaru" berganti ±4 dtk saat app tertutup) |
 | M7 | Checklist, berbagi, tema | US-17, US-18, US-19 | — | ✅ 2026-10-20 (diuji di emulator + REST di cloud: checklist, berbagi/cabut akses langsung berlaku, anggota tidak bisa hapus, tema gelap) |
+| M8 | Judul, simpan otomatis, bahasa | US-20, US-21, US-22 | — | ✅ 2026-10-24 (migrasi `note_title` di cloud; diuji di emulator API 36 dengan upgrade 1.1.0 → 1.2.0: judul tersimpan & tersinkron, simpan otomatis + simpan saat kembali, ganti bahasa langsung berlaku dan bertahan setelah restart; widget dengan judul belum dicek di emulator) |
 
 ## 11. Risiko & Mitigasi
 

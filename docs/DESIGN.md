@@ -55,6 +55,8 @@ Disimpan di kolom `notes.color` sebagai kunci, bukan hex, agar bisa diganti per 
 |---|---|---|
 | Display (wordmark, judul layar) | **Bricolage Grotesque** | 30–54 sp, 700–800 |
 | Judul kartu / isi catatan di widget | Bricolage Grotesque | 18–26 sp, 600–700 |
+
+Judul catatan (US-20): di kartu Beranda `titleLarge` maks 2 baris di atas isi (isi lalu selalu `bodyMedium`); di widget 1 baris tebal, isi 4 sp lebih kecil. Mockup: board "Judul catatan" di kanvas redesain.
 | Teks UI & isi catatan di daftar | **Figtree** | 15–17 sp, 500–700 |
 | Label & meta | Figtree | 12–14 sp, 600 |
 
@@ -81,9 +83,9 @@ Spasi kelipatan 4 dp. Padding layar 20 dp, jarak antar kartu 12 dp.
 | 1 | Kenalan | Ilustrasi tumpukan catatan + bentuk ekspresif, input nama & email, tombol "Mulai" (tanpa login). Bila sesi dicabut server: isian lama terisi + teks penjelasan berwarna error |
 | 2 | Mulai | Muncul jika belum punya grup: kartu "Buat grup baru" & "Gabung dengan kode" (6 kotak) |
 | 3 | Beranda | Chip pemilih grup, kartu ringkasan grup dengan tumpukan avatar anggota (tap → Detail grup), tombol Pengaturan di kanan atas, grid masonry catatan, badge "Di widget" (M3), FAB "Tulis" |
-| 4 | Editor | Kartu catatan besar sesuai warna, counter 0/500, pemilih warna (6 lingkaran 48 dp, ring 3 dp untuk yang terpilih; disembunyikan saat keyboard terbuka agar kartu memakai seluruh ruang). Tombol pengaturan di top bar membuka bottom sheet "Pengaturan catatan": segmented button Teks / Checklist, switch "Anggota lain boleh mengedit" (hanya penulis), hapus dengan konfirmasi (hanya penulis). Checklist: baris checkbox + teks + tombol hapus item, "Tambah item", Enter di item terakhir menambah item, item tercentang dicoret. Catatan orang lain yang tidak dibagikan tampil read-only. |
+| 4 | Editor | Top bar: kembali (menyimpan dulu) dan tombol pengaturan catatan; tidak ada tombol Simpan (simpan otomatis). Kartu catatan besar sesuai warna; kolom judul opsional (`headlineLarge`, placeholder "Judul", fokus pertama di catatan baru) di atas isi (`bodyLarge`); counter 0/500 hanya untuk isi, pemilih warna (6 lingkaran 48 dp, ring 3 dp untuk yang terpilih; disembunyikan saat keyboard terbuka agar kartu memakai seluruh ruang). Tombol pengaturan di top bar membuka bottom sheet "Pengaturan catatan": segmented button Teks / Checklist, switch "Anggota lain boleh mengedit" (hanya penulis), hapus dengan konfirmasi (hanya penulis). Checklist: baris checkbox + teks + tombol hapus item, "Tambah item", Enter di item terakhir menambah item, item tercentang dicoret. Catatan orang lain yang tidak dibagikan tampil read-only. |
 | 5 | Detail grup | Kode undangan (bagikan / buat ulang), daftar anggota, keluar grup. Aksi pemilik (ganti nama, buat ulang kode, keluarkan anggota lewat menu ⋮) hanya tampil untuk pemilik; semua aksi berisiko memakai dialog konfirmasi. |
-| 5b | Pengaturan | Tidak ada di mockup; mengikuti gaya kartu yang sama: Profil (nama, email, peringatan identitas), Tampilan (segmented: Ikuti sistem / Terang / Gelap), Notifikasi per grup (switch), Optimasi baterai (status + tombol ke pengaturan sistem), versi app. |
+| 5b | Pengaturan | Tidak ada di mockup; mengikuti gaya kartu yang sama: Profil (nama, email, peringatan identitas), Tampilan (segmented: Ikuti sistem / Terang / Gelap), Bahasa (segmented: Indonesia / English; nama bahasa tidak diterjemahkan), Notifikasi per grup (switch), Optimasi baterai (status + tombol ke pengaturan sistem), versi app. |
 | 6 | Pilih catatan widget | Preview widget di atas, pilih grup → radio: "Catatan terbaru" (otomatis, paling atas) atau catatan tertentu, "Pasang widget" / "Ganti catatan" |
 | 7 | Widget | Ukuran 4×2 dan 2×2, varian terang/gelap, state "catatan dihapus". Batasan Glance: font memakai sans-serif sistem (Glance tidak mendukung font dari `res/font`), sudut membulat hanya di Android 12+, dan waktu relatif baru diperbarui saat widget di-render ulang. |
 
