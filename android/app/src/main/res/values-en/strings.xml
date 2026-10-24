@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- General -->
+    <string name="common_back">Back</string>
+    <string name="common_cancel">Cancel</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_headline">Shared notes, always on your home screen.</string>
+    <string name="onboarding_name_label">Name</string>
+    <string name="onboarding_name_error">Enter a name, up to %1$d characters</string>
+    <string name="onboarding_email_label">Email</string>
+    <string name="onboarding_email_placeholder">name@email.com</string>
+    <string name="onboarding_email_error">Email format isn\'t right yet</string>
+    <string name="onboarding_submit">Start</string>
+    <string name="onboarding_session_lost">The server no longer recognizes the account on this phone. Tap Start to sign in again, then rejoin your group with an invite code.</string>
+    <string name="illustration_note_1">Pick up Kiara at 3 pm, okay?</string>
+    <string name="illustration_note_2">You\'ve got this today!</string>
+    <string name="illustration_note_3">Out of water, order 2</string>
+
+    <!-- Start: create / join group -->
+    <string name="start_greeting">Hi, %1$s</string>
+    <string name="start_headline">Start with the people closest to you</string>
+    <string name="start_body">Create a new group, or join with a code from your family and friends.</string>
+    <string name="start_create_title">Create a new group</string>
+    <string name="start_create_body">Name the group, then share the invite code.</string>
+    <string name="start_join_title">Join with a code</string>
+    <string name="start_join_body">Enter the %1$d-character invite code.</string>
+    <string name="start_join_action">Join</string>
+    <string name="create_group_title">Group name</string>
+    <string name="create_group_placeholder">E.g. Home, The Two of Us</string>
+    <string name="create_group_error">Enter a group name, up to %1$d characters</string>
+    <string name="create_group_confirm">Create</string>
+
+    <!-- Home -->
+    <string name="home_add_group">Create or join a group</string>
+    <string name="home_notes_title">Notes</string>
+    <string name="home_notes_empty_title">No notes yet</string>
+    <string name="home_notes_empty_body">Notes in this group will show up here.</string>
+    <string name="home_notes_order">Newest first</string>
+    <string name="home_write">Write</string>
+    <plurals name="home_member_count">
+        <item quantity="one">%d member</item>
+        <item quantity="other">%d members</item>
+    </plurals>
+    <plurals name="home_note_count">
+        <item quantity="one">%d note</item>
+        <item quantity="other">%d notes</item>
+    </plurals>
+
+    <!-- Notes -->
+    <string name="note_author_you">You</string>
+    <string name="note_author_unknown">Member</string>
+    <string name="note_pending">Not sent yet</string>
+    <string name="time_just_now">just now</string>
+    <string name="time_minutes">%1$d min</string>
+    <string name="time_hours">%1$d h</string>
+    <string name="time_yesterday">yesterday</string>
+    <string name="time_days">%1$d d</string>
+
+    <!-- Editor -->
+    <string name="editor_save">Save</string>
+    <string name="editor_color">Color</string>
+    <string name="color_butter">Yellow</string>
+    <string name="color_mint">Green</string>
+    <string name="color_sky">Blue</string>
+    <string name="color_peach">Peach</string>
+    <string name="color_lilac">Purple</string>
+    <string name="color_plain">White</string>
+    <string name="editor_label">NOTE</string>
+    <string name="editor_title_placeholder">Title</string>
+    <string name="editor_placeholder">Write something for your group…</string>
+    <string name="editor_new">New note</string>
+    <string name="editor_by_you">Written by you · %1$s</string>
+    <string name="editor_by">Written by %1$s · %2$s</string>
+    <string name="editor_settings">Note settings</string>
+    <string name="editor_kind_text">Text</string>
+    <string name="editor_kind_checklist">Checklist</string>
+    <string name="editor_checklist_add">Add item</string>
+    <string name="editor_checklist_placeholder">New item</string>
+    <string name="editor_checklist_remove">Remove item</string>
+    <string name="editor_share">Other members can edit</string>
+    <string name="editor_share_body">They can change the content and check items, but can\'t delete the note.</string>
+    <string name="editor_read_only">Only the author can change this note.</string>
+    <string name="editor_delete">Delete note</string>
+    <string name="editor_delete_title">Delete this note?</string>
+    <string name="editor_delete_body">The note will disappear from every group member\'s phone.</string>
+    <string name="editor_delete_confirm">Delete</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_profile">Profile</string>
+    <string name="settings_identity_warning">Your account is tied to this phone. If jOURnal is uninstalled, its data is cleared, or you switch phones, you\'ll have to rejoin your groups and won\'t be able to edit your old notes.</string>
+    <string name="settings_theme">Appearance</string>
+    <string name="settings_theme_system">Follow system</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_notifications">New note notifications</string>
+    <string name="settings_notifications_body">Widgets still update when a group\'s notifications are off.</string>
+    <string name="settings_battery">Battery optimization</string>
+    <string name="settings_battery_body">To keep widgets updating quickly while the app is closed, exclude jOURnal from battery optimization.</string>
+    <string name="settings_battery_ok">jOURnal is already excluded from battery optimization.</string>
+    <string name="settings_battery_vendor">On Xiaomi, Oppo, Vivo and similar phones, also turn on \"Autostart\" for jOURnal in the app settings.</string>
+    <string name="settings_battery_open">Open battery settings</string>
+    <string name="settings_version">jOURnal version %1$s</string>
+
+    <!-- Group details -->
+    <string name="group_rename">Rename group</string>
+    <string name="group_member_count">%1$d of %2$d members</string>
+    <string name="group_meta_you_owner">%1$s · you\'re the owner</string>
+    <string name="group_meta_owner">%1$s · owner: %2$s</string>
+    <string name="group_invite_title">INVITE CODE</string>
+    <string name="group_invite_regenerate">Regenerate</string>
+    <string name="group_invite_none_owner">No valid code yet. Create a new code to invite people.</string>
+    <string name="group_invite_none_member">The code has expired. Ask the group owner to create a new one.</string>
+    <string name="group_members_title">Members</string>
+    <string name="group_member_you">%1$s (you)</string>
+    <string name="group_owner_badge">Owner</string>
+    <string name="group_member_options">Options for %1$s</string>
+    <string name="group_remove_member">Remove from group</string>
+    <string name="group_remove_title">Remove %1$s?</string>
+    <string name="group_remove_body">They will no longer see this group\'s notes. Notes they wrote stay.</string>
+    <string name="group_remove_confirm">Remove</string>
+    <string name="group_leave">Leave group</string>
+    <string name="group_leave_title">Leave %1$s?</string>
+    <string name="group_leave_body">Your notes stay for the other members. To come back, you\'ll need a new invite code.</string>
+    <string name="group_leave_confirm">Leave</string>
+    <string name="group_regenerate_title">Create a new code?</string>
+    <string name="group_regenerate_body">The old code stops working right away. The new code is valid for 7 days.</string>
+
+    <!-- Invite -->
+    <string name="invite_share">Share</string>
+    <string name="invite_share_chooser">Share invite code</string>
+    <string name="invite_share_text">Join the group \"%1$s\" on jOURnal with code %2$s</string>
+    <plurals name="invite_days_left">
+        <item quantity="one">Valid for %d more day</item>
+        <item quantity="other">Valid for %d more days</item>
+    </plurals>
+
+    <!-- Widget -->
+    <string name="widget_description">One chosen note from your group, always on your home screen.</string>
+    <string name="widget_needs_profile">Open jOURnal to get started.</string>
+    <string name="widget_not_configured">Tap to choose a note.</string>
+    <string name="widget_left_group">You\'re no longer in this group. Tap to choose another note.</string>
+    <string name="widget_note_deleted">This note was deleted. Tap to choose another.</string>
+    <string name="widget_change">Change note</string>
+    <string name="widget_no_notes_yet">No notes in this group yet. Tap to write one.</string>
+    <string name="widget_picker_latest">Latest note</string>
+    <string name="widget_picker_latest_body">Switches automatically when a note is added or changed</string>
+    <string name="widget_badge">On widget</string>
+    <string name="widget_picker_title">Choose a note for the widget</string>
+    <string name="widget_picker_close">Close</string>
+    <string name="widget_picker_add">Add widget</string>
+    <string name="widget_picker_change">Change note</string>
+    <string name="widget_picker_empty">No notes in this group yet. Write one in jOURnal first.</string>
+    <string name="widget_picker_preview_empty">Choose a note below</string>
+    <string name="widget_picker_open_app">Open jOURnal</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_new_notes">New notes</string>
+    <string name="notification_channel_sync">Sync</string>
+    <string name="notification_syncing">Updating notes…</string>
+
+    <!-- Errors -->
+    <string name="error_network">No internet connection. Try again.</string>
+    <string name="error_profile_required">Complete your profile first.</string>
+    <string name="error_invite_not_found">Code not found. Please check it again.</string>
+    <string name="error_invite_expired">This code has expired. Ask the group owner for a new one.</string>
+    <string name="error_group_full">The group is full (up to 10 members).</string>
+    <string name="error_already_member">You\'re already a member of this group.</string>
+    <string name="error_not_owner">Only the group owner can do that.</string>
+    <string name="error_not_member">You\'re no longer a member of this group.</string>
+    <string name="error_cannot_remove_self">To leave the group, use the Leave group button.</string>
+    <string name="error_unknown">Something went wrong. Try again.</string>
+</resources>

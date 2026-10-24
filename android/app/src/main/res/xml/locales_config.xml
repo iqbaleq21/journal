@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Bahasa yang bisa dipilih per app di Pengaturan sistem (Android 13+); sama dengan pilihan di Pengaturan app. -->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="id" />
+    <locale android:name="en" />
+</locale-config>

@@ -52,6 +52,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.iqbal.journal.BuildConfig
 import com.iqbal.journal.R
+import com.iqbal.journal.domain.model.AppLanguage
 import com.iqbal.journal.domain.model.Group
 import com.iqbal.journal.domain.model.ThemeMode
 import com.iqbal.journal.domain.validation.ProfileRules
@@ -80,6 +81,7 @@ fun SettingsRoute(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMod
         onSaveProfile = viewModel::onSaveProfile,
         onNotifyChange = viewModel::onNotifyChange,
         onThemeModeChange = viewModel::onThemeModeChange,
+        onLanguageChange = viewModel::onLanguageChange,
         onOpenBatterySettings = { context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) },
         onErrorShown = viewModel::onErrorShown
     )
@@ -98,6 +100,7 @@ fun SettingsScreen(
     onSaveProfile: () -> Unit,
     onNotifyChange: (groupId: String, enabled: Boolean) -> Unit,
     onThemeModeChange: (ThemeMode) -> Unit,
+    onLanguageChange: (AppLanguage) -> Unit,
     onOpenBatterySettings: () -> Unit,
     onErrorShown: () -> Unit
 ) {
@@ -131,6 +134,7 @@ fun SettingsScreen(
             }
             ProfileSection(state, onNameChange, onEmailChange, onSaveProfile)
             ThemeSection(state.themeMode, onThemeModeChange)
+            LanguageSection(state.language, onLanguageChange)
             NotificationSection(state.groups, state.pendingNotifyGroupIds, onNotifyChange)
             BatterySection(isBatteryUnrestricted, onOpenBatterySettings)
             Text(
@@ -282,6 +286,30 @@ private fun ThemeSection(selected: ThemeMode, onSelect: (ThemeMode) -> Unit) {
 }
 
 @Composable
+private fun LanguageSection(selected: AppLanguage, onSelect: (AppLanguage) -> Unit) {
+    Section(stringResource(R.string.settings_language)) {
+        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+            AppLanguage.entries.forEachIndexed { index, language ->
+                SegmentedButton(
+                    selected = language == selected,
+                    onClick = { onSelect(language) },
+                    shape = SegmentedButtonDefaults.itemShape(index, AppLanguage.entries.size)
+                ) {
+                    Text(
+                        stringResource(
+                            when (language) {
+                                AppLanguage.Indonesian -> R.string.settings_language_id
+                                AppLanguage.English -> R.string.settings_language_en
+                            }
+                        )
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun BatterySection(isUnrestricted: Boolean, onOpenSettings: () -> Unit) {
     Section(stringResource(R.string.settings_battery)) {
         Text(
@@ -329,6 +357,7 @@ private fun SettingsScreenPreview() {
             onSaveProfile = {},
             onNotifyChange = { _, _ -> },
             onThemeModeChange = {},
+            onLanguageChange = {},
             onOpenBatterySettings = {},
             onErrorShown = {}
         )

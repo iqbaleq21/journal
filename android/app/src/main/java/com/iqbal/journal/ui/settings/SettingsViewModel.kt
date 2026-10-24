@@ -2,6 +2,7 @@ package com.iqbal.journal.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.iqbal.journal.domain.model.AppLanguage
 import com.iqbal.journal.domain.model.Group
 import com.iqbal.journal.domain.model.JournalError
 import com.iqbal.journal.domain.model.Outcome
@@ -34,6 +35,7 @@ data class SettingsUiState(
     /** Grup yang pengaturan notifikasinya sedang dikirim. */
     val pendingNotifyGroupIds: Set<String> = emptySet(),
     val themeMode: ThemeMode = ThemeMode.System,
+    val language: AppLanguage = AppLanguage.Indonesian,
     val error: JournalError? = null
 ) {
     val showNameError: Boolean get() = showValidation && !ProfileRules.isValidName(name)
@@ -67,8 +69,9 @@ class SettingsViewModel @Inject constructor(
         local,
         profileRepository.myProfile.filterNotNull(),
         groupRepository.groups,
-        appearanceRepository.themeMode
-    ) { state, profile, groups, themeMode ->
+        appearanceRepository.themeMode,
+        appearanceRepository.language
+    ) { state, profile, groups, themeMode, language ->
         SettingsUiState(
             name = state.name,
             email = state.email,
@@ -79,6 +82,7 @@ class SettingsViewModel @Inject constructor(
             groups = groups,
             pendingNotifyGroupIds = state.pendingNotifyGroupIds,
             themeMode = themeMode,
+            language = language,
             error = state.error
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), SettingsUiState())
@@ -135,6 +139,10 @@ class SettingsViewModel @Inject constructor(
 
     fun onThemeModeChange(mode: ThemeMode) {
         viewModelScope.launch { appearanceRepository.setThemeMode(mode) }
+    }
+
+    fun onLanguageChange(language: AppLanguage) {
+        viewModelScope.launch { appearanceRepository.setLanguage(language) }
     }
 
     fun onErrorShown() = local.update { it.copy(error = null) }

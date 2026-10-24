@@ -1,5 +1,6 @@
 package com.iqbal.journal.testing
 
+import com.iqbal.journal.domain.model.AppLanguage
 import com.iqbal.journal.domain.model.Group
 import com.iqbal.journal.domain.model.Member
 import com.iqbal.journal.domain.model.Note
@@ -231,5 +232,11 @@ class FakeAppearanceRepository : AppearanceRepository {
 
     override suspend fun setThemeMode(mode: ThemeMode) {
         themeMode.value = mode
+    }
+
+    override val language = MutableStateFlow(AppLanguage.Indonesian)
+
+    override suspend fun setLanguage(language: AppLanguage) {
+        this.language.value = language
     }
 }

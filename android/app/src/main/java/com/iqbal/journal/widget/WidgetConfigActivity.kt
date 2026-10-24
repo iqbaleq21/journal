@@ -4,7 +4,7 @@ import android.app.Activity
 import android.appwidget.AppWidgetManager
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.lifecycle.lifecycleScope
 import com.iqbal.journal.MainActivity
@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
 
 /** Layar pilih catatan saat widget dipasang (US-7) dan saat diatur ulang (US-9). */
 @AndroidEntryPoint
-class WidgetConfigActivity : ComponentActivity() {
+class WidgetConfigActivity : AppCompatActivity() {
     @Inject lateinit var appearance: AppearanceRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {

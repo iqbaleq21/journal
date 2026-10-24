@@ -1,6 +1,7 @@
 package com.iqbal.journal.ui.settings
 
 import app.cash.turbine.test
+import com.iqbal.journal.domain.model.AppLanguage
 import com.iqbal.journal.domain.model.JournalError
 import com.iqbal.journal.domain.model.Outcome
 import com.iqbal.journal.domain.model.Profile
@@ -76,6 +77,19 @@ class SettingsViewModelTest {
             viewModel.onThemeModeChange(ThemeMode.Dark)
 
             assertEquals(ThemeMode.Dark, expectMostRecentItem().themeMode)
+        }
+    }
+
+    @Test
+    fun `bahasa bawaan Indonesia dan pilihan bahasa tersimpan`() = runTest {
+        val appearance = FakeAppearanceRepository()
+        val viewModel = SettingsViewModel(profiles, groups, appearance)
+        viewModel.uiState.test {
+            assertEquals(AppLanguage.Indonesian, expectMostRecentItem().language)
+
+            viewModel.onLanguageChange(AppLanguage.English)
+
+            assertEquals(AppLanguage.English, expectMostRecentItem().language)
         }
     }
 }

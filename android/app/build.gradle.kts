@@ -102,6 +102,8 @@ configurations.matching { it.name == "detekt" }.configureEach {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
+    // Bahasa per app (AppCompatDelegate) juga di bawah Android 13.
+    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

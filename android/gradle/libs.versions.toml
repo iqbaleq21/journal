@@ -1,4 +1,5 @@
 [versions]
+appcompat = "1.7.1"
 agp = "9.4.1"
 kotlin = "2.4.21"
 ksp = "2.3.12"
@@ -27,6 +28,7 @@ turbine = "1.2.1"
 mockk = "1.14.11"
 
 [libraries]
+androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
