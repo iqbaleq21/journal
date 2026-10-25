@@ -49,6 +49,28 @@
         <item quantity="one">%d catatan</item>
         <item quantity="other">%d catatan</item>
     </plurals>
+    <string name="home_selection_close">Batal pilih</string>
+    <string name="home_selection_actions">Atur catatan terpilih</string>
+    <string name="home_selection_delete">Hapus catatan terpilih</string>
+    <string name="home_selection_share_on">Izinkan</string>
+    <string name="home_selection_share_off">Cabut</string>
+    <string name="home_selection_read_only">Catatan terpilih milik anggota lain dan tidak dibagikan, jadi tidak bisa diubah.</string>
+    <plurals name="home_selection_count">
+        <item quantity="one">%d dipilih</item>
+        <item quantity="other">%d dipilih</item>
+    </plurals>
+    <plurals name="home_selection_share_body">
+        <item quantity="one">Berlaku untuk %d catatan milikmu.</item>
+        <item quantity="other">Berlaku untuk %d catatan milikmu.</item>
+    </plurals>
+    <plurals name="home_selection_delete_title">
+        <item quantity="one">Hapus %d catatan?</item>
+        <item quantity="other">Hapus %d catatan?</item>
+    </plurals>
+    <plurals name="home_selection_delete_skipped">
+        <item quantity="one">%d catatan milik anggota lain tidak ikut terhapus.</item>
+        <item quantity="other">%d catatan milik anggota lain tidak ikut terhapus.</item>
+    </plurals>
 
     <!-- Catatan -->
     <string name="note_author_you">Kamu</string>

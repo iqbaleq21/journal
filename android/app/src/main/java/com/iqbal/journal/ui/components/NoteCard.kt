@@ -1,11 +1,14 @@
 package com.iqbal.journal.ui.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -16,8 +19,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import com.iqbal.journal.R
@@ -38,23 +44,49 @@ private const val TITLE_MAX_LINES = 2
 private const val AVATAR_ALPHA = 0.12f
 private const val BADGE_ALPHA = 0.09f
 
-/** Kartu catatan di grid Beranda. [isMine] mengganti nama penulis dengan "Kamu". */
+/**
+ * Kartu catatan di grid Beranda. [isMine] mengganti nama penulis dengan "Kamu".
+ * [isSelected] non-null = mode pilih (US-23): kartu menandai apakah ikut dipilih.
+ */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun NoteCard(note: Note, isMine: Boolean, isOnWidget: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun NoteCard(
+    note: Note,
+    isMine: Boolean,
+    isOnWidget: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    isSelected: Boolean? = null,
+    onLongClick: (() -> Unit)? = null
+) {
     val swatch = JournalTheme.noteColors.swatchFor(note.color)
     val author = when {
         isMine -> stringResource(R.string.note_author_you)
         else -> note.authorName ?: stringResource(R.string.note_author_unknown)
     }
+    val shape = MaterialTheme.shapes.medium
     Surface(
-        onClick = onClick,
-        shape = MaterialTheme.shapes.medium,
+        shape = shape,
         color = swatch.container,
-        border = JournalTheme.cardStyle.border,
-        modifier = modifier.hardShadow(MaterialTheme.shapes.medium)
+        border = if (isSelected == true) {
+            BorderStroke(Sizes.outlineThick * 2, MaterialTheme.colorScheme.primary)
+        } else {
+            JournalTheme.cardStyle.border
+        },
+        modifier = modifier
+            .hardShadow(shape)
+            .clip(shape)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .then(if (isSelected != null) Modifier.semantics { selected = isSelected } else Modifier)
     ) {
         Column(Modifier.padding(Spacing.medium), verticalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
-            if (isOnWidget) WidgetBadge()
+            if (isOnWidget || isSelected == true) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (isOnWidget) WidgetBadge()
+                    Spacer(Modifier.weight(1f))
+                    if (isSelected == true) SelectedMark()
+                }
+            }
             if (note.title.isNotEmpty()) {
                 Text(
                     text = note.title,
@@ -110,6 +142,19 @@ fun NoteCard(note: Note, isMine: Boolean, isOnWidget: Boolean, onClick: () -> Un
             }
         }
     }
+}
+
+@Composable
+private fun SelectedMark() {
+    Icon(
+        painterResource(R.drawable.ic_check),
+        contentDescription = null,
+        tint = MaterialTheme.colorScheme.onPrimary,
+        modifier = Modifier
+            .background(MaterialTheme.colorScheme.primary, CircleShape)
+            .padding(Spacing.extraSmall)
+            .size(Sizes.badgeIcon)
+    )
 }
 
 @Composable

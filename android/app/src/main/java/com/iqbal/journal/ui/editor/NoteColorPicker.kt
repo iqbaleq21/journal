@@ -34,7 +34,7 @@ private val SelectedRing = 3.dp
 
 /** Pemilih warna latar catatan (US-15); warnanya ikut tampil di widget. */
 @Composable
-internal fun NoteColorPicker(selected: NoteColor, onSelect: (NoteColor) -> Unit, modifier: Modifier = Modifier) {
+internal fun NoteColorPicker(selected: NoteColor?, onSelect: (NoteColor) -> Unit, modifier: Modifier = Modifier) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
         Text(stringResource(R.string.editor_color), style = MaterialTheme.typography.titleSmall)
         Row(

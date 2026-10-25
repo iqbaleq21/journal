@@ -1,5 +1,6 @@
 package com.iqbal.journal.ui.home
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -76,9 +77,33 @@ fun HomeRoute(
         onOpenEditor = onOpenEditor,
         onOpenGroup = onOpenGroup,
         onOpenSettings = onOpenSettings,
-        onErrorShown = viewModel::onErrorShown
+        onErrorShown = viewModel::onErrorShown,
+        selection = SelectionCallbacks(
+            onToggle = viewModel::onToggleSelection,
+            onClear = viewModel::onClearSelection,
+            onOpenActions = viewModel::onBulkSheetOpen,
+            onDismissActions = viewModel::onBulkSheetDismiss,
+            onColorChange = viewModel::onBulkColorChange,
+            onSharedChange = viewModel::onBulkSharedChange,
+            onDelete = viewModel::onBulkDeleteClick,
+            onDeleteConfirm = viewModel::onBulkDeleteConfirm,
+            onDeleteDismiss = viewModel::onBulkDeleteDismiss
+        )
     )
 }
+
+/** Event mode pilih (US-23), dikelompokkan agar parameter HomeScreen tetap terbaca. */
+data class SelectionCallbacks(
+    val onToggle: (String) -> Unit = {},
+    val onClear: () -> Unit = {},
+    val onOpenActions: () -> Unit = {},
+    val onDismissActions: () -> Unit = {},
+    val onColorChange: (NoteColor) -> Unit = {},
+    val onSharedChange: (Boolean) -> Unit = {},
+    val onDelete: () -> Unit = {},
+    val onDeleteConfirm: () -> Unit = {},
+    val onDeleteDismiss: () -> Unit = {}
+)
 
 @Composable
 fun HomeScreen(
@@ -88,8 +113,27 @@ fun HomeScreen(
     onOpenEditor: (groupId: String, noteId: String?) -> Unit,
     onOpenGroup: (groupId: String) -> Unit,
     onOpenSettings: () -> Unit,
-    onErrorShown: () -> Unit
+    onErrorShown: () -> Unit,
+    selection: SelectionCallbacks = SelectionCallbacks()
 ) {
+    BackHandler(enabled = state.isSelecting, onBack = selection.onClear)
+    if (state.isBulkSheetOpen) {
+        SelectionActionsSheet(
+            editableCount = state.editableSelectedNotes.size,
+            ownCount = state.ownSelectedNotes.size,
+            onColorChange = selection.onColorChange,
+            onSharedChange = selection.onSharedChange,
+            onDismiss = selection.onDismissActions
+        )
+    }
+    if (state.isBulkDeleteConfirmOpen) {
+        SelectionDeleteDialog(
+            count = state.ownSelectedNotes.size,
+            skippedCount = state.selectedNoteIds.size - state.ownSelectedNotes.size,
+            onConfirm = selection.onDeleteConfirm,
+            onDismiss = selection.onDeleteDismiss
+        )
+    }
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
     LaunchedEffect(state.error) {
@@ -103,7 +147,7 @@ fun HomeScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            if (selectedGroup != null) WriteButton(onClick = { onOpenEditor(selectedGroup.id, null) })
+            if (selectedGroup != null && !state.isSelecting) WriteButton { onOpenEditor(selectedGroup.id, null) }
         }
     ) { innerPadding ->
         Column(
@@ -113,13 +157,25 @@ fun HomeScreen(
                 .padding(innerPadding)
                 .padding(top = Spacing.medium)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(horizontal = Spacing.screen)
-            ) {
-                Wordmark(style = MaterialTheme.typography.headlineLarge, modifier = Modifier.weight(1f))
-                FilledTonalIconButton(onClick = onOpenSettings, modifier = Modifier.size(Sizes.touchTarget)) {
-                    Icon(painterResource(R.drawable.ic_settings), stringResource(R.string.settings_title))
+            if (state.isSelecting) {
+                SelectionBar(
+                    count = state.selectedNoteIds.size,
+                    canDelete = state.ownSelectedNotes.isNotEmpty(),
+                    isBusy = state.isBulkBusy,
+                    onClose = selection.onClear,
+                    onOpenActions = selection.onOpenActions,
+                    onDelete = selection.onDelete,
+                    modifier = Modifier.padding(horizontal = Spacing.screen)
+                )
+            } else {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = Spacing.screen)
+                ) {
+                    Wordmark(style = MaterialTheme.typography.headlineLarge, modifier = Modifier.weight(1f))
+                    FilledTonalIconButton(onClick = onOpenSettings, modifier = Modifier.size(Sizes.touchTarget)) {
+                        Icon(painterResource(R.drawable.ic_settings), stringResource(R.string.settings_title))
+                    }
                 }
             }
             GroupChips(
@@ -145,7 +201,11 @@ fun HomeScreen(
                     notes = state.notes,
                     myUserId = state.myUserId,
                     widgetNoteIds = state.widgetNoteIds,
-                    onNoteClick = { note -> onOpenEditor(note.groupId, note.id) },
+                    selectedNoteIds = state.selectedNoteIds,
+                    onNoteClick = { note ->
+                        if (state.isSelecting) selection.onToggle(note.id) else onOpenEditor(note.groupId, note.id)
+                    },
+                    onNoteLongClick = { note -> selection.onToggle(note.id) },
                     modifier = Modifier.weight(1f)
                 )
             }

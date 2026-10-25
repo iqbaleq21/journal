@@ -46,6 +46,28 @@
         <item quantity="one">%d note</item>
         <item quantity="other">%d notes</item>
     </plurals>
+    <string name="home_selection_close">Cancel selection</string>
+    <string name="home_selection_actions">Manage selected notes</string>
+    <string name="home_selection_delete">Delete selected notes</string>
+    <string name="home_selection_share_on">Allow</string>
+    <string name="home_selection_share_off">Revoke</string>
+    <string name="home_selection_read_only">The selected notes belong to other members and aren\'t shared, so they can\'t be changed.</string>
+    <plurals name="home_selection_count">
+        <item quantity="one">%d selected</item>
+        <item quantity="other">%d selected</item>
+    </plurals>
+    <plurals name="home_selection_share_body">
+        <item quantity="one">Applies to %d of your notes.</item>
+        <item quantity="other">Applies to %d of your notes.</item>
+    </plurals>
+    <plurals name="home_selection_delete_title">
+        <item quantity="one">Delete %d note?</item>
+        <item quantity="other">Delete %d notes?</item>
+    </plurals>
+    <plurals name="home_selection_delete_skipped">
+        <item quantity="one">%d note by another member won\'t be deleted.</item>
+        <item quantity="other">%d notes by other members won\'t be deleted.</item>
+    </plurals>
 
     <!-- Notes -->
     <string name="note_author_you">You</string>

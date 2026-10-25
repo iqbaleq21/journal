@@ -59,9 +59,12 @@ internal fun NotesGrid(
     notes: List<Note>,
     myUserId: String?,
     widgetNoteIds: Set<String>,
+    selectedNoteIds: Set<String>,
     onNoteClick: (Note) -> Unit,
+    onNoteLongClick: (Note) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isSelecting = selectedNoteIds.isNotEmpty()
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Fixed(NOTE_COLUMNS),
         horizontalArrangement = Arrangement.spacedBy(Spacing.cardGap),
@@ -80,6 +83,8 @@ internal fun NotesGrid(
                 isMine = note.authorId == myUserId,
                 isOnWidget = note.id in widgetNoteIds,
                 onClick = { onNoteClick(note) },
+                onLongClick = { onNoteLongClick(note) },
+                isSelected = if (isSelecting) note.id in selectedNoteIds else null,
                 modifier = Modifier.animateItem()
             )
         }
