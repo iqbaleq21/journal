@@ -97,6 +97,22 @@ class EditorViewModelTest {
     }
 
     @Test
+    fun `catatan lama, termasuk milik orang lain yang dibagikan, disimpan otomatis setelah diberi judul`() {
+        notes.notes.value = listOf(
+            FakeNoteRepository.note(id = "n1"),
+            FakeNoteRepository.note(id = "n2", authorId = "ibu", shared = true)
+        )
+        listOf("n1", "n2").forEach { id ->
+            val viewModel = viewModel(noteId = id)
+            advanceBy(EditorViewModel.AUTOSAVE_DELAY_MILLIS)
+            viewModel.onTitleChange("Belanja")
+            advanceBy(EditorViewModel.AUTOSAVE_DELAY_MILLIS)
+            assertEquals("Belanja", notes.lastDraft?.title)
+        }
+        assertEquals(listOf("n1" to "Galon habis", "n2" to "Galon habis"), notes.updateCalls)
+    }
+
+    @Test
     fun `kembali setelah simpan otomatis tidak mengirim ulang`() {
         val viewModel = viewModel()
         viewModel.onContentChange("Galon habis")
