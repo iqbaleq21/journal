@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Nama** | **jOURnal**: "OUR" ditulis kapital untuk menekankan catatan bersama |
-| **Status** | v0.6, M0–M7 selesai |
-| **Tanggal** | 2026-10-20 |
+| **Status** | v0.8, M0–M9 selesai |
+| **Tanggal** | 2026-10-25 |
 | **Platform** | Android saja |
 | **Package ID** | `com.iqbal.journal` |
 | **Pemilik** | Iqbal |
@@ -12,6 +12,7 @@
 Dokumen ini adalah sumber kebenaran untuk scope dan arsitektur. Kalau implementasi menyimpang dari dokumen ini, perbarui dokumen ini dulu.
 
 **Riwayat perubahan**
+- v0.8: Pilih banyak catatan di Beranda untuk hapus, atur akses edit, dan ganti warna sekaligus (US-23).
 - v0.7: Judul catatan opsional (US-20), simpan otomatis tanpa tombol Simpan (US-21), pilihan bahasa Indonesia/English di Pengaturan (US-22).
 - v0.6: Catatan mode checklist (US-17), berbagi akses edit per catatan (US-18), dan pilihan tema terang/gelap di Pengaturan (US-19).
 - v0.5: Tidak ada logout di Pengaturan: akun anonim yang di-logout tidak bisa dipulihkan. Diganti peringatan bahwa identitas terikat ke HP ini (§5.1, §9).
@@ -76,6 +77,7 @@ Aplikasi catatan untuk **sekelompok kecil orang yang saling terhubung** (pasanga
 | US-20 | memberi judul pada catatan (opsional) | P2 |
 | US-21 | catatan tersimpan otomatis selagi mengetik, tanpa tombol Simpan | P2 |
 | US-22 | memilih bahasa app (Indonesia / English) | P2 |
+| US-23 | memilih banyak catatan sekaligus untuk dihapus, diatur aksesnya, atau diganti warnanya | P2 |
 
 ## 5. Kebutuhan Fungsional
 
@@ -105,6 +107,7 @@ Aplikasi catatan untuk **sekelompok kecil orang yang saling terhubung** (pasanga
 - Siapa pun di grup bisa membaca. Hanya **penulis** yang bisa menghapus.
 - Berbagi akses (US-18): penulis menyalakan "Anggota lain boleh mengedit" (`notes.shared`) per catatan. Jika aktif, semua anggota grup bisa mengubah isi, warna, mode, dan centang. Menghapus dan mengatur akses tetap hak penulis (dijaga trigger `NOTE_AUTHOR_ONLY`). Edit bersamaan: yang terakhir menang. Edit offline yang tiba setelah akses dicabut ditolak dan diganti versi server.
 - Hapus = soft delete (`deleted_at`) agar penghapusan ikut tersinkron ke HP lain.
+- Aksi massal (US-23): tekan lama kartu di Beranda untuk masuk mode pilih; tap kartu lain menambah/membuang pilihan, tombol kembali/✕ atau pindah grup mengosongkannya. Aksi: **hapus** (dengan konfirmasi) dan **akses edit** (izinkan/cabut) hanya untuk catatan sendiri; catatan orang lain di pilihan dilewati dan disebut di dialog. **Warna** untuk catatan yang boleh diedit (milik sendiri atau dibagikan). Tiap catatan dikirim sebagai update/hapus biasa lewat antrean offline yang sama dengan Editor, jadi tiap catatan memicu push sendiri.
 - Daftar catatan per grup, terbaru di atas, dengan nama & foto penulis.
 
 ### 5.4 Widget
@@ -317,6 +320,7 @@ select cron.schedule('purge-deleted-notes', '0 3 * * *',
 | M6 | Nice to have | US-15, US-16 | — | ✅ 2026-10-18 (warna tersimpan di server & widget; widget mode "terbaru" berganti ±4 dtk saat app tertutup) |
 | M7 | Checklist, berbagi, tema | US-17, US-18, US-19 | — | ✅ 2026-10-20 (diuji di emulator + REST di cloud: checklist, berbagi/cabut akses langsung berlaku, anggota tidak bisa hapus, tema gelap) |
 | M8 | Judul, simpan otomatis, bahasa | US-20, US-21, US-22 | — | ✅ 2026-10-24 (migrasi `note_title` di cloud; diuji di emulator API 36 dengan upgrade 1.1.0 → 1.2.0: judul tersimpan & tersinkron, simpan otomatis + simpan saat kembali, ganti bahasa langsung berlaku dan bertahan setelah restart; widget dengan judul belum dicek di emulator) |
+| M9 | Aksi massal | US-23 | — | ✅ 2026-10-25 (diuji di emulator: mode pilih, lembar aksi, dialog hapus, ganti warna tersinkron ke cloud) |
 
 ## 11. Risiko & Mitigasi
 
