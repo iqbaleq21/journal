@@ -152,7 +152,9 @@ private const val NO_FOCUS = -1
  * tempelan banyak baris menjadi satu item per baris (baris kosong dibuang).
  */
 internal fun splitLines(old: String, new: String): Pair<String, List<String>> {
-    if (new.replaceFirst("\n", "") == old) return old to listOf("")
+    val withoutEnter = new.replaceFirst("\n", "")
+    // Panjang, bukan isi: keyboard bisa ikut mengubah huruf (mis. kapital otomatis) bersamaan dengan Enter.
+    if ('\n' !in withoutEnter && withoutEnter.length == old.length) return withoutEnter to listOf("")
     val lines = new.lines()
     return lines.first() to lines.drop(1).filter { it.isNotBlank() }
 }

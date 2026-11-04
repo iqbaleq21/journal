@@ -302,6 +302,7 @@ class EditorViewModelTest {
     @Test
     fun `enter menyisipkan item kosong, tempelan dipecah per baris`() {
         assertEquals("susu" to listOf(""), splitLines(old = "susu", new = "su\nsu"))
+        assertEquals("Roti" to listOf(""), splitLines(old = "roti", new = "Roti\n"))
         assertEquals("a" to listOf("b", "c"), splitLines(old = "", new = "a\nb\n\nc"))
     }
 
