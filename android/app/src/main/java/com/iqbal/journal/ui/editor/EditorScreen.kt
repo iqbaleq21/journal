@@ -98,6 +98,7 @@ fun EditorRoute(onDone: () -> Unit, viewModel: EditorViewModel = hiltViewModel()
             onTextChange = viewModel::onItemTextChange,
             onCheckedChange = viewModel::onItemCheckedChange,
             onAdd = viewModel::onAddItem,
+            onInsert = viewModel::onInsertItems,
             onRemove = viewModel::onRemoveItem
         ),
         onDeleteClick = viewModel::onDeleteClick,
@@ -222,6 +223,7 @@ data class ChecklistCallbacks(
     val onTextChange: (index: Int, text: String) -> Unit,
     val onCheckedChange: (index: Int, checked: Boolean) -> Unit,
     val onAdd: () -> Unit,
+    val onInsert: (index: Int, text: String, newItems: List<String>) -> Unit,
     val onRemove: (index: Int) -> Unit
 )
 
@@ -267,6 +269,7 @@ private fun NoteEditorCard(
                     onTextChange = checklist.onTextChange,
                     onCheckedChange = checklist.onCheckedChange,
                     onAdd = checklist.onAdd,
+                    onInsert = checklist.onInsert,
                     onRemove = checklist.onRemove,
                     modifier = Modifier
                         .weight(1f)
@@ -408,7 +411,7 @@ private fun EditorScreenPreview() {
             onSharedChange = {},
             onSettingsClick = {},
             onSettingsDismiss = {},
-            checklist = ChecklistCallbacks({ _, _ -> }, { _, _ -> }, {}, {}),
+            checklist = ChecklistCallbacks({ _, _ -> }, { _, _ -> }, {}, { _, _, _ -> }, {}),
             onDeleteClick = {},
             onDeleteDismiss = {},
             onDeleteConfirm = {},

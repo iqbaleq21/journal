@@ -193,6 +193,12 @@ class EditorViewModel @Inject constructor(
 
     fun onAddItem() = updateItems { it + ChecklistItem("") }
 
+    /** Enter atau tempel banyak baris: item [index] diisi [text], [newItems] disisipkan tepat di bawahnya. */
+    fun onInsertItems(index: Int, text: String, newItems: List<String>) = updateItems { items ->
+        items.mapIndexed { i, item -> if (i == index) item.copy(text = text.oneLine()) else item }.toMutableList()
+            .apply { addAll(index + 1, newItems.map { ChecklistItem(it.oneLine()) }) }
+    }
+
     fun onRemoveItem(index: Int) = updateItems { items -> items.filterIndexed { i, _ -> i != index } }
 
     fun onSharedChange(shared: Boolean) = _uiState.update { if (it.isMine) it.copy(shared = shared) else it }

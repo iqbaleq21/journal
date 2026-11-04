@@ -16,7 +16,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -43,22 +46,27 @@ internal fun ChecklistEditor(
     onTextChange: (index: Int, text: String) -> Unit,
     onCheckedChange: (index: Int, checked: Boolean) -> Unit,
     onAdd: () -> Unit,
+    onInsert: (index: Int, text: String, newItems: List<String>) -> Unit,
     onRemove: (index: Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Item yang baru disisipkan di tengah; komposisi baris berbasis posisi, jadi fokusnya diminta manual.
+    var focusIndex by remember { mutableIntStateOf(NO_FOCUS) }
     Column(modifier.verticalScroll(rememberScrollState())) {
         items.forEachIndexed { index, item ->
-            val isLast = index == items.lastIndex
             ChecklistRow(
                 item = item,
                 canEdit = canEdit,
                 // Item kosong terakhir = baru ditambahkan, langsung siap diketik.
-                autoFocus = canEdit && isLast && item.text.isEmpty(),
+                autoFocus = canEdit && index == items.lastIndex && item.text.isEmpty(),
+                focusNow = focusIndex == index,
+                onFocused = { focusIndex = NO_FOCUS },
                 mutedColor = mutedColor,
-                // Enter di item terakhir menambah item baru; di tempat lain diabaikan.
                 onTextChange = { text ->
                     if ('\n' in text) {
-                        if (isLast) onAdd()
+                        val (current, newItems) = splitLines(old = item.text, new = text)
+                        onInsert(index, current, newItems)
+                        focusIndex = index + newItems.size
                     } else {
                         onTextChange(index, text)
                     }
@@ -82,6 +90,8 @@ private fun ChecklistRow(
     item: ChecklistItem,
     canEdit: Boolean,
     autoFocus: Boolean,
+    focusNow: Boolean,
+    onFocused: () -> Unit,
     mutedColor: Color,
     onTextChange: (String) -> Unit,
     onCheckedChange: (Boolean) -> Unit,
@@ -89,6 +99,12 @@ private fun ChecklistRow(
 ) {
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { if (autoFocus) focusRequester.requestFocus() }
+    LaunchedEffect(focusNow) {
+        if (focusNow) {
+            focusRequester.requestFocus()
+            onFocused()
+        }
+    }
     val style = MaterialTheme.typography.titleLarge
     Row(verticalAlignment = Alignment.CenterVertically) {
         Checkbox(
@@ -127,4 +143,16 @@ private fun ChecklistRow(
             }
         }
     }
+}
+
+private const val NO_FOCUS = -1
+
+/**
+ * Teks baru berisi baris baru: satu Enter menyisipkan item kosong di bawah tanpa memotong teks;
+ * tempelan banyak baris menjadi satu item per baris (baris kosong dibuang).
+ */
+internal fun splitLines(old: String, new: String): Pair<String, List<String>> {
+    if (new.replaceFirst("\n", "") == old) return old to listOf("")
+    val lines = new.lines()
+    return lines.first() to lines.drop(1).filter { it.isNotBlank() }
 }

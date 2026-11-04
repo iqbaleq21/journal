@@ -287,6 +287,25 @@ class EditorViewModelTest {
     }
 
     @Test
+    fun `item checklist bisa disisipkan di tengah`() {
+        val viewModel = viewModel()
+        viewModel.onKindChange(NoteKind.Checklist)
+        viewModel.onItemTextChange(0, "susu")
+        viewModel.onAddItem()
+        viewModel.onItemTextChange(1, "roti")
+
+        viewModel.onInsertItems(0, "susu", listOf("telur", "gula"))
+
+        assertEquals(listOf("susu", "telur", "gula", "roti"), viewModel.uiState.value.items.map { it.text })
+    }
+
+    @Test
+    fun `enter menyisipkan item kosong, tempelan dipecah per baris`() {
+        assertEquals("susu" to listOf(""), splitLines(old = "susu", new = "su\nsu"))
+        assertEquals("a" to listOf("b", "c"), splitLines(old = "", new = "a\nb\n\nc"))
+    }
+
+    @Test
     fun `item checklist tidak bisa membuat isi melebihi batas panjang`() {
         val viewModel = viewModel()
         viewModel.onKindChange(NoteKind.Checklist)
