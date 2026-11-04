@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Nama** | **jOURnal**: "OUR" ditulis kapital untuk menekankan catatan bersama |
-| **Status** | v0.8, M0–M9 selesai |
-| **Tanggal** | 2026-10-25 |
+| **Status** | v0.9, M0–M9 selesai |
+| **Tanggal** | 2026-11-04 |
 | **Platform** | Android saja |
 | **Package ID** | `com.iqbal.journal` |
 | **Pemilik** | Iqbal |
@@ -12,6 +12,7 @@
 Dokumen ini adalah sumber kebenaran untuk scope dan arsitektur. Kalau implementasi menyimpang dari dokumen ini, perbarui dokumen ini dulu.
 
 **Riwayat perubahan**
+- v0.9: Checklist: Enter di item mana pun menyisipkan item di bawahnya; tempel teks banyak baris menjadi banyak item (US-17).
 - v0.8: Pilih banyak catatan di Beranda untuk hapus, atur akses edit, dan ganti warna sekaligus (US-23).
 - v0.7: Judul catatan opsional (US-20), simpan otomatis tanpa tombol Simpan (US-21), pilihan bahasa Indonesia/English di Pengaturan (US-22).
 - v0.6: Catatan mode checklist (US-17), berbagi akses edit per catatan (US-18), dan pilihan tema terang/gelap di Pengaturan (US-19).
