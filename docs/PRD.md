@@ -13,6 +13,7 @@ Dokumen ini adalah sumber kebenaran untuk scope dan arsitektur. Kalau implementa
 
 **Riwayat perubahan**
 - v0.9: Checklist: Enter di item mana pun menyisipkan item di bawahnya; tempel teks banyak baris menjadi banyak item (US-17).
+- v1.0: Anggota boleh menghapus catatan bersama, item checklist tercentang pindah ke bawah, tampilan mode pilih baru.
 - v0.8: Pilih banyak catatan di Beranda untuk hapus, atur akses edit, dan ganti warna sekaligus (US-23).
 - v0.7: Judul catatan opsional (US-20), simpan otomatis tanpa tombol Simpan (US-21), pilihan bahasa Indonesia/English di Pengaturan (US-22).
 - v0.6: Catatan mode checklist (US-17), berbagi akses edit per catatan (US-18), dan pilihan tema terang/gelap di Pengaturan (US-19).
@@ -103,12 +104,12 @@ Aplikasi catatan untuk **sekelompok kecil orang yang saling terhubung** (pasanga
 ### 5.3 Catatan
 - Isi: teks polos, maks **500 karakter**.
 - Judul (US-20, `notes.title`): opsional, satu baris, maks **60 karakter**, tidak dihitung dalam batas isi. String kosong = tanpa judul; catatan tanpa judul tampil seperti sebelumnya. Kartu, Editor, widget, dan daftar Pilih widget menampilkan judul di atas isi.
-- Mode (`notes.kind`): **teks** atau **checklist** (US-17). Checklist disimpan di `content` sebagai teks, satu item per baris (`[ ] item` / `[x] item`), jadi batas 500 karakter termasuk penandanya. Mengganti mode membawa isinya: tiap baris jadi item, atau sebaliknya. Enter di item mana pun menyisipkan item kosong tepat di bawahnya (teks tidak dipotong); menempel teks banyak baris menjadi satu item per baris (baris kosong dibuang). Widget, kartu, dan notifikasi menampilkan ☐/☑; centang hanya lewat app.
+- Mode (`notes.kind`): **teks** atau **checklist** (US-17). Checklist disimpan di `content` sebagai teks, satu item per baris (`[ ] item` / `[x] item`), jadi batas 500 karakter termasuk penandanya. Mengganti mode membawa isinya: tiap baris jadi item, atau sebaliknya. Enter di item mana pun menyisipkan item kosong tepat di bawahnya (teks tidak dipotong); menempel teks banyak baris menjadi satu item per baris (baris kosong dibuang). Item tercentang selalu pindah ke bawah (urutan relatif tetap; catatan lama ikut terurut saat ditampilkan, tersimpan terurut pada edit berikutnya). Widget, kartu, dan notifikasi menampilkan ☐/☑; centang hanya lewat app.
 - Simpan otomatis (US-21): perubahan apa pun di Editor (judul, isi, warna, mode, centang, akses) disimpan **1,5 detik** setelah berhenti mengetik, dan langsung saat menekan kembali. Catatan baru dibuat pada simpan pertama, lalu di-update. Catatan baru yang kosong dibuang; catatan lama yang isinya dikosongkan tidak disimpan (versi terakhir tetap; hapus lewat Pengaturan catatan). Setiap simpan memicu push ke anggota lain (§5.5).
 - Siapa pun di grup bisa membaca. Hanya **penulis** yang bisa menghapus.
-- Berbagi akses (US-18): penulis menyalakan "Anggota lain boleh mengedit" (`notes.shared`) per catatan. Jika aktif, semua anggota grup bisa mengubah isi, warna, mode, dan centang. Menghapus dan mengatur akses tetap hak penulis (dijaga trigger `NOTE_AUTHOR_ONLY`). Edit bersamaan: yang terakhir menang. Edit offline yang tiba setelah akses dicabut ditolak dan diganti versi server.
+- Berbagi akses (US-18): penulis menyalakan "Anggota lain boleh mengedit" (`notes.shared`) per catatan. Jika aktif, semua anggota grup bisa mengubah isi, warna, mode, dan centang. Anggota juga boleh menghapusnya (sejak 2026-11-05); mengatur akses tetap hak penulis (dijaga trigger `NOTE_AUTHOR_ONLY`). Edit bersamaan: yang terakhir menang. Edit offline yang tiba setelah akses dicabut ditolak dan diganti versi server.
 - Hapus = soft delete (`deleted_at`) agar penghapusan ikut tersinkron ke HP lain.
-- Aksi massal (US-23): tekan lama kartu di Beranda untuk masuk mode pilih; tap kartu lain menambah/membuang pilihan, tombol kembali/✕ atau pindah grup mengosongkannya. Aksi: **hapus** (dengan konfirmasi) dan **akses edit** (izinkan/cabut) hanya untuk catatan sendiri; catatan orang lain di pilihan dilewati dan disebut di dialog. **Warna** untuk catatan yang boleh diedit (milik sendiri atau dibagikan). Tiap catatan dikirim sebagai update/hapus biasa lewat antrean offline yang sama dengan Editor, jadi tiap catatan memicu push sendiri.
+- Aksi massal (US-23): tekan lama kartu di Beranda untuk masuk mode pilih; tap kartu lain menambah/membuang pilihan, tombol kembali/✕ atau pindah grup mengosongkannya. Aksi: **akses edit** (izinkan/cabut) hanya untuk catatan sendiri. **Hapus** (dengan konfirmasi) dan **warna** untuk catatan yang boleh diedit (milik sendiri atau dibagikan); catatan orang lain yang tidak dibagikan dilewati dan disebut di dialog hapus. Tiap catatan dikirim sebagai update/hapus biasa lewat antrean offline yang sama dengan Editor, jadi tiap catatan memicu push sendiri.
 - Daftar catatan per grup, terbaru di atas, dengan nama & foto penulis.
 
 ### 5.4 Widget
@@ -271,7 +272,7 @@ create index on notes (group_id, updated_at desc);
 - `devices`: hanya baris milik sendiri (insert / update / delete).
 - `groups`: `select` jika anggota; perubahan hanya via RPC.
 - `group_members`: `select` jika anggota grup tsb; `update` kolom `notify` milik sendiri; insert/delete hanya via RPC.
-- `notes`: `select` jika `is_member(group_id)` dan grup belum diarsip; `insert` jika `author_id = auth.uid()` dan anggota; `update` jika `author_id = auth.uid()` atau (`shared` dan anggota). Trigger menolak non-penulis yang mengubah `shared` atau `deleted_at`.
+- `notes`: `select` jika `is_member(group_id)` dan grup belum diarsip; `insert` jika `author_id = auth.uid()` dan anggota; `update` jika `author_id = auth.uid()` atau (`shared` dan anggota). Trigger menolak non-penulis yang mengubah `shared`; `deleted_at` boleh diubah siapa pun yang lolos policy update.
 
 ### 8.2 Fungsi RPC (`security definer`)
 | Fungsi | Perilaku |
