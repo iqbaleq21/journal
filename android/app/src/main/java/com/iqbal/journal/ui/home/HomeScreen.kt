@@ -128,8 +128,8 @@ fun HomeScreen(
     }
     if (state.isBulkDeleteConfirmOpen) {
         SelectionDeleteDialog(
-            count = state.ownSelectedNotes.size,
-            skippedCount = state.selectedNoteIds.size - state.ownSelectedNotes.size,
+            count = state.editableSelectedNotes.size,
+            skippedCount = state.selectedNoteIds.size - state.editableSelectedNotes.size,
             onConfirm = selection.onDeleteConfirm,
             onDismiss = selection.onDeleteDismiss
         )
@@ -160,7 +160,7 @@ fun HomeScreen(
             if (state.isSelecting) {
                 SelectionBar(
                     count = state.selectedNoteIds.size,
-                    canDelete = state.ownSelectedNotes.isNotEmpty(),
+                    canDelete = state.editableSelectedNotes.isNotEmpty(),
                     isBusy = state.isBulkBusy,
                     onClose = selection.onClear,
                     onOpenActions = selection.onOpenActions,

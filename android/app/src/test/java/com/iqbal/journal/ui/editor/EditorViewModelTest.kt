@@ -241,7 +241,7 @@ class EditorViewModelTest {
     }
 
     @Test
-    fun `catatan orang lain yang dibagikan bisa diedit tapi tidak bisa dihapus atau diatur aksesnya`() {
+    fun `catatan orang lain yang dibagikan bisa diedit dan dihapus tapi tidak bisa diatur aksesnya`() {
         notes.notes.value = listOf(FakeNoteRepository.note(id = "n1", authorId = "ibu", shared = true))
         val viewModel = viewModel(noteId = "n1")
 
@@ -249,7 +249,7 @@ class EditorViewModelTest {
         viewModel.onContentChange("Galon sudah dipesan")
         viewModel.onLeave()
 
-        assertFalse(viewModel.uiState.value.canDelete)
+        assertTrue(viewModel.uiState.value.canDelete)
         assertEquals(listOf("n1" to "Galon sudah dipesan"), notes.updateCalls)
         assertEquals(true, notes.lastDraft?.shared)
     }

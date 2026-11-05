@@ -59,7 +59,7 @@ data class EditorUiState(
     val isDone: Boolean = false
 ) {
     val canEdit: Boolean get() = (isMine || shared) && !isLoading
-    val canDelete: Boolean get() = !isNew && isMine
+    val canDelete: Boolean get() = !isNew && (isMine || shared)
 
     /** Isi yang disimpan ke kolom `content`; checklist ikut dihitung terhadap batas panjang. */
     val body: String

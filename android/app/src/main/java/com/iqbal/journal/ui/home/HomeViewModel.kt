@@ -48,8 +48,10 @@ data class HomeUiState(
     val isSelecting: Boolean get() = selectedNoteIds.isNotEmpty()
     private val selectedNotes: List<Note> get() = notes.filter { it.id in selectedNoteIds }
 
-    /** Hapus dan atur akses tetap hak penulis (US-18); catatan orang lain dilewati. */
+    /** Atur akses tetap hak penulis (US-18); catatan orang lain dilewati. */
     val ownSelectedNotes: List<Note> get() = selectedNotes.filter { it.authorId == myUserId }
+
+    /** Warna dan hapus: catatan sendiri dan catatan bersama. */
     val editableSelectedNotes: List<Note> get() = selectedNotes.filter { it.authorId == myUserId || it.shared }
 }
 
@@ -144,7 +146,7 @@ class HomeViewModel @Inject constructor(
     ) { noteRepository.update(it.id, it.toDraft().copy(shared = shared)) }
 
     fun onBulkDeleteClick() = localState.update {
-        if (uiState.value.ownSelectedNotes.isEmpty()) {
+        if (uiState.value.editableSelectedNotes.isEmpty()) {
             it
         } else {
             it.copy(isBulkSheetOpen = false, isBulkDeleteConfirmOpen = true)
@@ -153,7 +155,7 @@ class HomeViewModel @Inject constructor(
 
     fun onBulkDeleteDismiss() = localState.update { it.copy(isBulkDeleteConfirmOpen = false) }
 
-    fun onBulkDeleteConfirm() = runBulk(uiState.value.ownSelectedNotes) { noteRepository.delete(it.id) }
+    fun onBulkDeleteConfirm() = runBulk(uiState.value.editableSelectedNotes) { noteRepository.delete(it.id) }
 
     /** Dikirim satu per satu lewat antrean yang sama dengan Editor; error pertama yang ditampilkan. */
     private fun runBulk(notes: List<Note>, action: suspend (Note) -> Outcome<*>) {

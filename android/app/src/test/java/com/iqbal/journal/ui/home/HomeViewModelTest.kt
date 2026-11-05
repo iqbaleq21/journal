@@ -37,7 +37,7 @@ class HomeViewModelTest {
     private fun HomeViewModel.selectAll() = listOf("mine", "shared", "private").forEach(::onToggleSelection)
 
     @Test
-    fun `hapus massal butuh konfirmasi dan hanya menghapus catatan sendiri`() = runTest {
+    fun `hapus massal butuh konfirmasi dan melewati catatan orang lain yang tidak dibagikan`() = runTest {
         val viewModel = viewModel()
         viewModel.uiState.test {
             viewModel.selectAll()
@@ -48,7 +48,7 @@ class HomeViewModelTest {
             assertTrue(notes.deleteCalls.isEmpty())
 
             viewModel.onBulkDeleteConfirm()
-            assertEquals(listOf("mine"), notes.deleteCalls)
+            assertEquals(listOf("mine", "shared"), notes.deleteCalls)
             val after = expectMostRecentItem()
             assertFalse(after.isSelecting)
             assertFalse(after.isBulkDeleteConfirmOpen)

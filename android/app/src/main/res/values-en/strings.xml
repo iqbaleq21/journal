@@ -65,8 +65,8 @@
         <item quantity="other">Delete %d notes?</item>
     </plurals>
     <plurals name="home_selection_delete_skipped">
-        <item quantity="one">%d note by another member won\'t be deleted.</item>
-        <item quantity="other">%d notes by other members won\'t be deleted.</item>
+        <item quantity="one">%d unshared note by another member won\'t be deleted.</item>
+        <item quantity="other">%d unshared notes by other members won\'t be deleted.</item>
     </plurals>
 
     <!-- Notes -->

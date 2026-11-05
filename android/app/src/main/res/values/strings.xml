@@ -68,8 +68,8 @@
         <item quantity="other">Hapus %d catatan?</item>
     </plurals>
     <plurals name="home_selection_delete_skipped">
-        <item quantity="one">%d catatan milik anggota lain tidak ikut terhapus.</item>
-        <item quantity="other">%d catatan milik anggota lain tidak ikut terhapus.</item>
+        <item quantity="one">%d catatan anggota lain yang tidak dibagikan tidak ikut terhapus.</item>
+        <item quantity="other">%d catatan anggota lain yang tidak dibagikan tidak ikut terhapus.</item>
     </plurals>
 
     <!-- Catatan -->
