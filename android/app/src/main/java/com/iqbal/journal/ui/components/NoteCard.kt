@@ -1,6 +1,5 @@
 package com.iqbal.journal.ui.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -8,7 +7,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -19,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -44,6 +43,9 @@ private const val TITLE_MAX_LINES = 2
 private const val AVATAR_ALPHA = 0.12f
 private const val BADGE_ALPHA = 0.09f
 
+/** Mode pilih: kartu yang tidak dipilih memudar agar yang dipilih menonjol. */
+private const val UNSELECTED_ALPHA = 0.4f
+
 /**
  * Kartu catatan di grid Beranda. [isMine] mengganti nama penulis dengan "Kamu".
  * [isSelected] non-null = mode pilih (US-23): kartu menandai apakah ikut dipilih.
@@ -68,33 +70,16 @@ fun NoteCard(
     Surface(
         shape = shape,
         color = swatch.container,
-        border = if (isSelected == true) {
-            BorderStroke(Sizes.outlineThick * 2, MaterialTheme.colorScheme.primary)
-        } else {
-            JournalTheme.cardStyle.border
-        },
+        border = JournalTheme.cardStyle.border,
         modifier = modifier
+            .alpha(if (isSelected == false) UNSELECTED_ALPHA else 1f)
             .hardShadow(shape)
             .clip(shape)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .then(if (isSelected != null) Modifier.semantics { selected = isSelected } else Modifier)
     ) {
         Column(Modifier.padding(Spacing.medium), verticalArrangement = Arrangement.spacedBy(Spacing.cardGap)) {
-            if (isOnWidget || isSelected == true) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (isOnWidget) WidgetBadge()
-                    Spacer(Modifier.weight(1f))
-                    if (isSelected == true) SelectedMark()
-                }
-            }
-            if (note.title.isNotEmpty()) {
-                Text(
-                    text = note.title,
-                    style = MaterialTheme.typography.titleLarge,
-                    maxLines = TITLE_MAX_LINES,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
+            CardHeader(title = note.title, isOnWidget = isOnWidget, isSelected = isSelected == true)
             Text(
                 text = note.previewText,
                 // Dengan judul, isi selalu teks biasa agar judul tetap yang paling menonjol.
@@ -140,6 +125,36 @@ fun NoteCard(
                     maxLines = 1
                 )
             }
+        }
+    }
+}
+
+/** Badge widget dan judul; tanda pilih di samping judul, atau di baris atas bila tanpa judul. */
+@Composable
+private fun CardHeader(title: String, isOnWidget: Boolean, isSelected: Boolean) {
+    val hasTitle = title.isNotEmpty()
+    val markOnTop = isSelected && !hasTitle
+    if (isOnWidget || markOnTop) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.small)
+        ) {
+            if (markOnTop) SelectedMark()
+            if (isOnWidget) WidgetBadge()
+        }
+    }
+    if (hasTitle) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.small)
+        ) {
+            if (isSelected) SelectedMark()
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                maxLines = TITLE_MAX_LINES,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
