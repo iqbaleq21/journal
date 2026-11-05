@@ -188,8 +188,19 @@ class EditorViewModel @Inject constructor(
         }
     }
 
-    fun onItemCheckedChange(index: Int, checked: Boolean) =
-        updateItems { items -> items.mapIndexed { i, item -> if (i == index) item.copy(checked = checked) else item } }
+    fun onItemCheckedChange(index: Int, checked: Boolean) = updateItems { items ->
+        Checklist.checkedLast(
+            items.mapIndexed { i, item ->
+                if (i ==
+                    index
+                ) {
+                    item.copy(checked = checked)
+                } else {
+                    item
+                }
+            }
+        )
+    }
 
     fun onAddItem() = updateItems { it + ChecklistItem("") }
 

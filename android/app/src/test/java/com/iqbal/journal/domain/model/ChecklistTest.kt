@@ -6,13 +6,13 @@ import org.junit.Test
 class ChecklistTest {
     @Test
     fun `format lalu parse menghasilkan item yang sama, item kosong dibuang`() {
-        val items = listOf(ChecklistItem("Beli susu", checked = true), ChecklistItem("  "), ChecklistItem("Telur"))
+        val items = listOf(ChecklistItem("Telur"), ChecklistItem("  "), ChecklistItem("Beli susu", checked = true))
 
         val content = Checklist.format(items)
 
-        assertEquals("[x] Beli susu\n[ ] Telur", content)
+        assertEquals("[ ] Telur\n[x] Beli susu", content)
         assertEquals(
-            listOf(ChecklistItem("Beli susu", checked = true), ChecklistItem("Telur")),
+            listOf(ChecklistItem("Telur"), ChecklistItem("Beli susu", checked = true)),
             Checklist.parse(content)
         )
     }
@@ -20,6 +20,19 @@ class ChecklistTest {
     @Test
     fun `teks biasa jadi item belum dicentang dan pratinjau memakai kotak centang`() {
         assertEquals(listOf(ChecklistItem("Susu"), ChecklistItem("Roti")), Checklist.parse("Susu\n\nRoti"))
-        assertEquals("☑ Susu\n☐ Roti", Checklist.preview("[x] Susu\n[ ] Roti"))
+        assertEquals("☐ Roti\n☑ Susu", Checklist.preview("[x] Susu\n[ ] Roti"))
+    }
+
+    @Test
+    fun `item tercentang selalu di bawah dengan urutan relatif tetap`() {
+        assertEquals(
+            listOf(
+                ChecklistItem("Telur"),
+                ChecklistItem("Roti"),
+                ChecklistItem("Susu", true),
+                ChecklistItem("Kopi", true)
+            ),
+            Checklist.parse("[x] Susu\n[ ] Telur\n[x] Kopi\n[ ] Roti")
+        )
     }
 }

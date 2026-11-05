@@ -255,7 +255,7 @@ class EditorViewModelTest {
     }
 
     @Test
-    fun `ganti ke checklist mengubah tiap baris jadi item dan disimpan dengan penanda`() {
+    fun `ganti ke checklist mengubah tiap baris jadi item, yang dicentang pindah ke bawah`() {
         val viewModel = viewModel()
         viewModel.onContentChange("Susu\nRoti")
 
@@ -264,11 +264,11 @@ class EditorViewModelTest {
         viewModel.onLeave()
 
         assertEquals(
-            listOf(ChecklistItem("Susu", checked = true), ChecklistItem("Roti")),
+            listOf(ChecklistItem("Roti"), ChecklistItem("Susu", checked = true)),
             viewModel.uiState.value.items
         )
         assertEquals(NoteKind.Checklist, notes.lastDraft?.kind)
-        assertEquals("[x] Susu\n[ ] Roti", notes.lastDraft?.content)
+        assertEquals("[ ] Roti\n[x] Susu", notes.lastDraft?.content)
     }
 
     @Test

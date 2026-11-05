@@ -7,14 +7,20 @@ object Checklist {
     private const val CHECKED = "[x] "
     private const val UNCHECKED = "[ ] "
 
-    /** Baris tanpa penanda (mis. dari catatan teks yang diubah jadi checklist) menjadi item belum dicentang. */
+    /**
+     * Baris tanpa penanda (mis. dari catatan teks yang diubah jadi checklist) menjadi item belum dicentang.
+     * Item tercentang di bawah, juga untuk catatan lama yang tersimpan berurutan campur.
+     */
     fun parse(content: String): List<ChecklistItem> = content.lines().filter { it.isNotBlank() }.map { line ->
         if (line.startsWith(CHECKED)) {
             ChecklistItem(line.removePrefix(CHECKED), checked = true)
         } else {
             ChecklistItem(line.removePrefix(UNCHECKED))
         }
-    }
+    }.let(::checkedLast)
+
+    /** Urutan relatif tetap: yang baru dicentang jadi teratas di kelompok tercentang. */
+    fun checkedLast(items: List<ChecklistItem>): List<ChecklistItem> = items.sortedBy { it.checked }
 
     /** Item kosong dibuang. */
     fun format(items: List<ChecklistItem>): String = items.filter { it.text.isNotBlank() }
