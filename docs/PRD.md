@@ -105,7 +105,7 @@ Aplikasi catatan untuk **sekelompok kecil orang yang saling terhubung** (pasanga
 - Isi: teks polos, maks **500 karakter**.
 - Judul (US-20, `notes.title`): opsional, satu baris, maks **60 karakter**, tidak dihitung dalam batas isi. String kosong = tanpa judul; catatan tanpa judul tampil seperti sebelumnya. Kartu, Editor, widget, dan daftar Pilih widget menampilkan judul di atas isi.
 - Mode (`notes.kind`): **teks** atau **checklist** (US-17). Checklist disimpan di `content` sebagai teks, satu item per baris (`[ ] item` / `[x] item`), jadi batas 500 karakter termasuk penandanya. Mengganti mode membawa isinya: tiap baris jadi item, atau sebaliknya. Enter di item mana pun menyisipkan item kosong tepat di bawahnya (teks tidak dipotong); menempel teks banyak baris menjadi satu item per baris (baris kosong dibuang). Item tercentang selalu pindah ke bawah (urutan relatif tetap; catatan lama ikut terurut saat ditampilkan, tersimpan terurut pada edit berikutnya). Widget, kartu, dan notifikasi menampilkan ☐/☑; centang hanya lewat app.
-- Simpan otomatis (US-21): perubahan apa pun di Editor (judul, isi, warna, mode, centang, akses) disimpan **1,5 detik** setelah berhenti mengetik, dan langsung saat menekan kembali. Catatan baru dibuat pada simpan pertama, lalu di-update. Catatan baru yang kosong dibuang; catatan lama yang isinya dikosongkan tidak disimpan (versi terakhir tetap; hapus lewat Pengaturan catatan). Setiap simpan memicu push ke anggota lain (§5.5).
+- Simpan otomatis (US-21): perubahan apa pun di Editor (judul, isi, warna, mode, centang, akses) disimpan **1,5 detik** setelah berhenti mengetik, dan langsung saat menekan kembali. Catatan baru dibuat pada simpan pertama, lalu di-update. Perubahan dari HP lain yang tiba saat Editor terbuka langsung tampil bila tidak ada ketikan yang belum tersimpan; bila ada, ketikan dipertahankan (yang tersimpan terakhir menang). Catatan baru yang kosong dibuang; catatan lama yang isinya dikosongkan tidak disimpan (versi terakhir tetap; hapus lewat Pengaturan catatan). Setiap simpan memicu push ke anggota lain (§5.5).
 - Siapa pun di grup bisa membaca. Hanya **penulis** yang bisa menghapus.
 - Berbagi akses (US-18): penulis menyalakan "Anggota lain boleh mengedit" (`notes.shared`) per catatan. Jika aktif, semua anggota grup bisa mengubah isi, warna, mode, dan centang. Anggota juga boleh menghapusnya (sejak 2026-11-05); mengatur akses tetap hak penulis (dijaga trigger `NOTE_AUTHOR_ONLY`). Edit bersamaan: yang terakhir menang. Edit offline yang tiba setelah akses dicabut ditolak dan diganti versi server.
 - Hapus = soft delete (`deleted_at`) agar penghapusan ikut tersinkron ke HP lain.
@@ -132,7 +132,7 @@ Aplikasi catatan untuk **sekelompok kecil orang yang saling terhubung** (pasanga
 - Fallback: **WorkManager** periodik (15 menit, minimum Android) untuk sinkron jika push terlewat.
 - Notifikasi sistem (US-11) hanya untuk catatan **baru** (bukan edit); bisa dimatikan per grup di pengaturan.
 
-- Offline (US-12): tulis/edit/hapus langsung tersimpan di Room dan masuk antrean `pending_ops`; dikirim berurutan saat online (langsung, saat app dibuka, atau lewat WorkManager). ID catatan baru dibuat di HP agar kirim ulang tidak menggandakan catatan. Selama ada perubahan tertunda, versi server tidak menimpa catatan itu; perubahan yang ditolak server dibuang dan diganti versi server.
+- Offline (US-12): tulis/edit/hapus langsung tersimpan di Room dan masuk antrean `pending_ops`; dikirim berurutan saat online (langsung, saat app dibuka, atau lewat WorkManager). ID catatan baru dibuat di HP agar kirim ulang tidak menggandakan catatan. Selama ada perubahan tertunda, versi server tidak menimpa catatan itu; perubahan yang ditolak server (4xx) dibuang dan diganti versi server; gangguan server (5xx, 408, 429) diperlakukan seperti offline: antrean disimpan dan dikirim ulang nanti.
 
 ### 5.6 Retensi Data
 - **Server** menyimpan semua catatan tanpa batas.
@@ -269,7 +269,7 @@ create index on notes (group_id, updated_at desc);
 ### 8.1 Aturan RLS (ringkas)
 - Helper `is_member(group_id uuid) returns boolean` (`security definer`) untuk dipakai di policy.
 - `profiles`: `select` profil sendiri dan profil orang yang satu grup (nama & email terlihat oleh sesama anggota); `insert`/`update` hanya profil sendiri.
-- `devices`: hanya baris milik sendiri (insert / update / delete).
+- `devices`: hanya baris milik sendiri (insert / update / delete). App mendaftarkan token lewat RPC `register_device`, bukan upsert langsung.
 - `groups`: `select` jika anggota; perubahan hanya via RPC.
 - `group_members`: `select` jika anggota grup tsb; `update` kolom `notify` milik sendiri; insert/delete hanya via RPC.
 - `notes`: `select` jika `is_member(group_id)` dan grup belum diarsip; `insert` jika `author_id = auth.uid()` dan anggota; `update` jika `author_id = auth.uid()` atau (`shared` dan anggota). Trigger menolak non-penulis yang mengubah `shared`; `deleted_at` boleh diubah siapa pun yang lolos policy update.
@@ -279,10 +279,11 @@ create index on notes (group_id, updated_at desc);
 |---|---|
 | `create_group(name text) → (group_id, invite_code)` | Buat grup, owner = pemanggil, tambahkan sebagai anggota. |
 | `join_group(code text) → group_id` | Validasi kode valid, belum kedaluwarsa, anggota < 10, belum jadi anggota. |
-| `leave_group(group_id uuid)` | Hapus keanggotaan; pindahkan owner jika perlu; arsipkan jika kosong. |
+| `leave_group(group_id uuid)` | Hapus keanggotaan; pindahkan owner jika perlu; arsipkan jika kosong. Baris grup dikunci dulu agar dua anggota terakhir yang keluar bersamaan tetap mengarsipkan grup. |
 | `remove_member(group_id uuid, user_id uuid)` | Hanya owner. |
 | `regenerate_invite(group_id uuid) → invite_code` | Hanya owner. Kode lama tidak berlaku. |
 | `rename_group(group_id uuid, name text)` | Hanya owner. |
+| `register_device(token text)` | Simpan token FCM untuk pemanggil; token yang masih tercatat milik akun lama di HP yang sama (sesi dicabut) pindah ke pemanggil. |
 
 ### 8.3 Edge Function `notify-members`
 - Dipicu trigger `notes_notify_members` (`after insert or update` pada `notes`) yang memanggil fungsi lewat `pg_net`. URL fungsi dan secret webhook disimpan di **Vault** (`notify_members_url`, `notify_members_secret`), bukan di repo; fungsi memeriksa header `x-webhook-secret` dan di-deploy dengan `verify_jwt = false`.
@@ -330,7 +331,7 @@ select cron.schedule('purge-deleted-notes', '0 3 * * *',
 |---|---|
 | Supabase Free **di-pause otomatis** setelah 7 hari tanpa aktivitas | Pemakaian harian biasanya cukup; opsional cron ping mingguan (mis. GitHub Actions). |
 | FCM tertunda karena Doze / battery optimizer vendor (Xiaomi, Oppo, dll.) | Priority `high`; WorkManager fallback; panduan di app untuk mematikan optimasi baterai. |
-| Token FCM berubah / HP ganti | Tabel `devices`; upsert token di `onNewToken` & saat app dibuka; hapus token invalid. |
+| Token FCM berubah / HP ganti | Tabel `devices`; RPC `register_device` di `onNewToken` & saat app dibuka (token pindah ke akun baru setelah sesi dicabut); hapus token invalid. |
 | Identitas hilang saat uninstall / hapus data / ganti HP (akun anonim) | Peringatan di Pengaturan; v2: tautkan email terverifikasi (§5.1). |
 | Sesi dicabut server (akun dihapus, token tidak berlaku) | Kembali ke Kenalan dengan isian lama, masuk lagi sebagai akun baru, gabung ulang dengan kode (§5.1). |
 | Penyalahgunaan anonymous sign-in (bot membuat akun) | Rate limit bawaan Supabase; opsional CAPTCHA jika app disebar luas. |
