@@ -5,7 +5,6 @@ internal object Tables {
     const val PROFILES = "profiles"
     const val GROUPS = "groups"
     const val NOTES = "notes"
-    const val DEVICES = "devices"
     const val GROUP_MEMBERS = "group_members"
 }
 
@@ -16,4 +15,5 @@ internal object Rpc {
     const val REMOVE_MEMBER = "remove_member"
     const val RENAME_GROUP = "rename_group"
     const val REGENERATE_INVITE = "regenerate_invite"
+    const val REGISTER_DEVICE = "register_device"
 }
