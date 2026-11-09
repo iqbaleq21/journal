@@ -7,8 +7,10 @@ import com.iqbal.journal.data.local.PendingOpType
 import com.iqbal.journal.data.remote.NoteDto
 import com.iqbal.journal.data.remote.NoteFieldsDto
 import com.iqbal.journal.data.remote.NoteRemoteDataSource
+import com.iqbal.journal.data.remote.outcomeOf
 import com.iqbal.journal.data.toEntity
 import io.github.jan.supabase.exceptions.RestException
+import io.ktor.http.HttpStatusCode
 import java.time.Clock
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -53,14 +55,17 @@ class NoteOutbox @Inject constructor(
             } catch (
                 @Suppress("SwallowedException") e: RestException
             ) {
+                if (e.isTemporary()) {
+                    // Server sedang gangguan, bukan menolak: perubahan disimpan dan dikirim ulang nanti.
+                    scheduler.scheduleFlush()
+                    return@withLock false
+                }
                 // Ditolak server (mis. sudah bukan anggota, atau terkirim ganda): buang, pakai versi server.
-                pendingOpDao.delete(op.id)
-                resync(op.noteId)
+                discard(op)
             } catch (
                 @Suppress("SwallowedException") e: NoteRejectedException
             ) {
-                pendingOpDao.delete(op.id)
-                resync(op.noteId)
+                discard(op)
             } catch (
                 @Suppress("TooGenericExceptionCaught", "SwallowedException") e: Exception
             ) {
@@ -89,6 +94,16 @@ class NoteOutbox @Inject constructor(
     }
 
     private fun PendingOpEntity.fields() = NoteFieldsDto(checkNotNull(content), color, kind, shared, title)
+
+    private suspend fun discard(op: PendingOpEntity) {
+        pendingOpDao.delete(op.id)
+        // Gagal memuat ulang tidak menahan antrean berikutnya; refresh berikutnya menyamakan cache.
+        outcomeOf { resync(op.noteId) }
+    }
+
+    private fun RestException.isTemporary() = statusCode >= HttpStatusCode.InternalServerError.value ||
+        statusCode == HttpStatusCode.RequestTimeout.value ||
+        statusCode == HttpStatusCode.TooManyRequests.value
 
     private suspend fun resync(noteId: String) {
         if (pendingOpDao.hasPending(noteId)) return

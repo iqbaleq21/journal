@@ -11,6 +11,7 @@ import com.iqbal.journal.data.toEntity
 import io.github.jan.supabase.exceptions.RestException
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import java.io.IOException
@@ -82,7 +83,7 @@ class NoteOutboxTest {
     fun `ditolak server dibuang lalu cache memakai versi server`() = runTest {
         queue += op(1, "n1", PendingOpType.Update, "ditolak")
         coEvery { remote.updateContent("n1", NoteFieldsDto("ditolak", null, "text", false, "")) } throws
-            mockk<RestException>(relaxed = true)
+            restException(statusCode = 403)
         coEvery { remote.fetchByIds(listOf("n1")) } returns listOf(dto("n1", "versi server"))
 
         assertTrue(outbox.flush())
@@ -110,5 +111,36 @@ class NoteOutboxTest {
 
         assertTrue(outbox.flush())
         assertTrue(queue.isEmpty())
+    }
+
+    @Test
+    fun `gangguan server (5xx) dan 429 tidak membuang antrean, dicoba lagi nanti`() = runTest {
+        for (status in listOf(503, 429)) {
+            queue.clear()
+            queue += op(1, "n1", PendingOpType.Update, "ketik offline")
+            coEvery { remote.updateContent(any(), any()) } throws restException(status)
+
+            assertFalse(outbox.flush())
+
+            assertTrue("status $status", queue.size == 1)
+        }
+        verify { scheduler.scheduleFlush() }
+    }
+
+    @Test
+    fun `gagal memuat ulang setelah ditolak tidak menghentikan antrean berikutnya`() = runTest {
+        queue += listOf(op(1, "n1", PendingOpType.Update, "ditolak"), op(2, "n2", PendingOpType.Delete, null))
+        coEvery { remote.updateContent(any(), any()) } throws restException(403)
+        coEvery { remote.fetchByIds(any()) } throws IOException("offline")
+        coEvery { remote.softDelete(any(), any()) } returns Unit
+
+        assertTrue(outbox.flush())
+
+        assertTrue(queue.isEmpty())
+        coVerify { remote.softDelete("n2", now) }
+    }
+
+    private fun restException(statusCode: Int) = mockk<RestException>(relaxed = true) {
+        every { this@mockk.statusCode } returns statusCode
     }
 }
