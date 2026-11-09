@@ -79,3 +79,13 @@ class FullSyncTest {
         assertFalse(FullSync(groups, notes).run())
     }
 }
+
+class NoteSyncWorkerTest {
+    @Test
+    fun `push catatan baru tidak tergantikan push edit catatan yang sama`() {
+        val created = NoteSyncWorker.uniqueWorkName(NoteChangedMessage("n1", isNew = true, notify = true))
+        val edited = NoteSyncWorker.uniqueWorkName(NoteChangedMessage("n1", isNew = false, notify = true))
+
+        assertTrue(created != edited)
+    }
+}

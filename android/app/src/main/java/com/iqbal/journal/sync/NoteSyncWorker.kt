@@ -91,7 +91,14 @@ class NoteSyncWorker @AssistedInject constructor(
             // Push terbaru menggantikan yang lama (syncNote selalu mengambil versi terbaru), termasuk yang sedang
             // menunggu ulang dengan backoff; dengan APPEND push baru ikut tertahan di belakangnya.
             WorkManager.getInstance(context)
-                .enqueueUniqueWork("note-sync-${message.noteId}", ExistingWorkPolicy.REPLACE, request)
+                .enqueueUniqueWork(uniqueWorkName(message), ExistingWorkPolicy.REPLACE, request)
         }
+
+        /**
+         * Push catatan baru punya antrean sendiri: simpan otomatis langsung mengirim push edit, dan bila keduanya
+         * berbagi nama, REPLACE membatalkan push baru beserta notifikasinya.
+         */
+        internal fun uniqueWorkName(message: NoteChangedMessage) =
+            "note-sync-${message.noteId}" + if (message.isNew) "-new" else ""
     }
 }
