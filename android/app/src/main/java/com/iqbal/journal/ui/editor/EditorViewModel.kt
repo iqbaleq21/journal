@@ -117,16 +117,19 @@ class EditorViewModel @Inject constructor(
         viewModelScope.launch {
             combine(noteRepository.note(noteId), profileRepository.myProfile, ::Pair).collect { (note, me) ->
                 if (note == null) {
-                    // Dihapus di HP lain saat sedang dibuka.
-                    if (saved != null) _uiState.update { it.copy(isDone = true) }
+                    // Dihapus di HP lain saat sedang dibuka, atau sudah tidak ada saat dibuka dari notifikasi.
+                    _uiState.update { it.copy(isDone = true) }
                     return@collect
                 }
                 val isMine = note.authorId == me?.id
-                val isFirstLoad = saved == null
+                val previous = saved
                 saved = note
                 _uiState.update {
-                    // Isian yang belum disimpan tidak ditimpa selama masih boleh diedit.
-                    val keepTyped = !isFirstLoad && it.canEdit && (isMine || note.shared)
+                    // Isian dipertahankan bila ada ketikan yang belum tersimpan, atau versi server tidak berubah
+                    // (spasi di ujung yang sedang diketik tidak hilang). Selain itu versi server dipakai, agar
+                    // kembali tanpa mengetik tidak menimpa perubahan anggota lain dengan isi lama.
+                    val keepTyped = previous != null && it.canEdit && (isMine || note.shared) &&
+                        (it.draft != previous.toDraft() || note.toDraft() == previous.toDraft())
                     val typed = if (keepTyped) {
                         it
                     } else {

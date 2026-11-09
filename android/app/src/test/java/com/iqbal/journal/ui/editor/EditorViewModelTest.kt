@@ -330,4 +330,37 @@ class EditorViewModelTest {
         assertFalse(viewModel.uiState.value.canEdit)
         assertEquals("Galon habis", viewModel.uiState.value.content)
     }
+
+    @Test
+    fun `perubahan anggota lain tampil dan tidak ditimpa saat kembali tanpa mengetik`() {
+        notes.notes.value =
+            listOf(FakeNoteRepository.note(id = "n1", authorId = "ibu", shared = true, content = "susu"))
+        val viewModel = viewModel(noteId = "n1")
+
+        notes.notes.value =
+            listOf(FakeNoteRepository.note(id = "n1", authorId = "ibu", shared = true, content = "susu, telur"))
+        assertEquals("susu, telur", viewModel.uiState.value.content)
+
+        viewModel.onLeave()
+        assertTrue(notes.updateCalls.isEmpty())
+    }
+
+    @Test
+    fun `ketikan yang belum tersimpan tidak ditimpa perubahan dari server`() {
+        notes.notes.value =
+            listOf(FakeNoteRepository.note(id = "n1", authorId = "ibu", shared = true, content = "susu"))
+        val viewModel = viewModel(noteId = "n1")
+
+        viewModel.onContentChange("susu, roti")
+        notes.notes.value =
+            listOf(FakeNoteRepository.note(id = "n1", authorId = "ibu", shared = true, content = "susu, telur"))
+        assertEquals("susu, roti", viewModel.uiState.value.content)
+    }
+
+    @Test
+    fun `catatan yang tidak ada di HP, misalnya sudah dihapus, langsung menutup layar`() {
+        val viewModel = viewModel(noteId = "hilang")
+
+        assertTrue(viewModel.uiState.value.isDone)
+    }
 }
